@@ -83,9 +83,9 @@ void makeConnection() {
         addrlen = sizeof(addr);
         n = recvfrom(fd, answer, 128, 0, (struct sockaddr *)&addr, &addrlen);
         if (n == -1) puts("ERROR");
-
-        if (verifyAnswer(answer) == 1) break;
+    
         printf("%s", answer); //debug
+        if (verifyAnswer(answer) == 1) break;
     }
 
     freeaddrinfo(res);
