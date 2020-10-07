@@ -8,20 +8,26 @@
 #include <string.h>
 #include <stdio.h>
 
+
 #define MAX_INPUT 20
+
 
 char *PDIP = NULL;
 char *PDport = NULL;
 char *ASIP = NULL;
 char *ASport = NULL;
-int fd;
+int isRegistered = 0;
 
+
+//TODO: select
 void parseArgs(int argc, char **argv);
+int parseInput(char *buffer, char *command, char *uid, char *pass);
 void makeConnection();
 int verifyCommand(char *command);
 int verifyUid(char *uid);
 int verifyPass(char *pass);
-int verifyAnswer(char *answer);
+void verifyAnswer(char *answer);
+
 
 int main(int argc, char **argv) {
     parseArgs(argc, argv);
@@ -30,13 +36,15 @@ int main(int argc, char **argv) {
     return(0);
 }
 
+
 void parseArgs(int argc, char **argv) {
-    // verificar input
+    //verificar???
     PDIP = argv[1];
     PDport = argv[2];
     ASIP = argv[3];
     ASport = argv[4];
 }
+
 
 void makeConnection() {
     int fd, errcode;
@@ -58,7 +66,7 @@ void makeConnection() {
     hints.ai_socktype = SOCK_DGRAM; 
 
     errcode = getaddrinfo(ASIP, ASport, &hints, &res);
-    if (errcode != 0) exit(1);
+    if (errcode != 0) exit(1); // correto?
     
     while (1) {
         memset(answer, 0, sizeof(answer));
@@ -66,31 +74,49 @@ void makeConnection() {
         memset(buffer, 0, sizeof(buffer));
 
         fgets(buffer, MAX_INPUT, stdin);
-        sscanf(buffer, "%s %s %s", command, uid, pass);
+        errcode = parseInput(buffer, command, uid, pass);
 
-        errcode = verifyCommand(command);
         if (errcode == -1) continue;
-
-        if (verifyUid(uid) != 0 || verifyPass(pass) != 0) continue;
+        if (errcode == 1 && !isRegistered) break; // specific case where the user never registers
 
         if (errcode == 0) sprintf(message, "REG %s %s %s %s\n", uid, pass, PDIP, PDport);
         else sprintf(message, "UNR %s %s\n", uid, pass);
 
-        // Pq 40 e não 41?
         n = sendto(fd, message, strlen(message), 0,res->ai_addr, res->ai_addrlen);
-        if (n == -1) puts("ERROR");
+        if (n == -1) puts("ERROR");//?????
 
         addrlen = sizeof(addr);
         n = recvfrom(fd, answer, 128, 0, (struct sockaddr *)&addr, &addrlen);
-        if (n == -1) puts("ERROR");
-    
-        printf("%s", answer); //debug
-        if (verifyAnswer(answer) == 1) break;
+        if (n == -1) puts("ERROR");//??????
+
+        verifyAnswer(answer);
+        if (errcode == 1) break;
     }
 
     freeaddrinfo(res);
     close(fd);
 }
+
+
+int parseInput(char *buffer, char *command, char *uid, char *pass) {
+    int code;
+
+    if (!isRegistered) {
+        sscanf(buffer, "%s %s %s", command, uid, pass); // verificar?
+        code = verifyCommand(command);
+        if (code == 0 && (verifyUid(uid) != 0 || verifyPass(pass)) != 0) return -1;
+    }
+    else {
+        sscanf(buffer, "%s", command);
+        code = verifyCommand(command);
+        if (code == 0) {
+            printf("You can only register one user\n");
+            code = -1;
+        }
+    }
+    return code;  
+}
+
 
 int verifyCommand(char *command) {
     if (strcmp(command, "exit") == 0) return 1;
@@ -101,12 +127,14 @@ int verifyCommand(char *command) {
     return -1;
 }
 
+
 int verifyUid(char *uid) {
     if ((strlen(uid) == 5 && atoi(uid) != 0) || strcmp(uid, "00000") == 0) return 0;
 
     printf("Invalid UID\n");
     return -1;
 }
+
 
 int verifyPass(char *pass) {
     char *temp = pass;
@@ -119,31 +147,20 @@ int verifyPass(char *pass) {
     while (*temp++) {
         if (!(*temp >= 'a' && *temp <= 'z') && !(*temp >= 'A' && *temp <= 'Z') && !(*temp >= '0' && *temp <= '9') && *temp != '\0') {
             printf("Invalid password\n");
-            printf("-%c-", *temp);
             return -1;
         }
     }
     return 0;
 }
 
-int verifyAnswer(char *answer) {    // refactor
-    if (strcmp(answer, "RRG OK\n") == 0) {
-        printf("Registration successful\n");
-        return 0;
-    }
-    else if (strcmp(answer, "RRG NOK\n") == 0) {
-        printf("Registration failed\n");
-        return 0;
-    }
-    else if (strcmp(answer, "RUN OK\n") == 0) {
-        printf("Unresgitration successful\n");
-        return 1;
-    }
-    else if(strcmp(answer, "RUN NOK\n") == 0) {
-        printf("Unresgistrtion failed\n");
-        return 0;
-    }
 
-    printf("ERROR\n");
-    return 0;
+void verifyAnswer(char *answer) {
+    if (strcmp(answer, "RRG OK\n") == 0) {
+        isRegistered = 1;
+        printf("Registration successful: %s", answer);
+    }
+    else if (strcmp(answer, "RRG NOK\n") == 0) printf("Registration failed: %s", answer);
+    else if (strcmp(answer, "RUN OK\n") == 0) printf("Unresgitration successful: %s", answer);
+    else if(strcmp(answer, "RUN NOK\n") == 0) printf("Unresgistrtion failed: %s", answer);
+    else printf("ERROR\n");
 }
