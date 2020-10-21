@@ -18,6 +18,7 @@
 // falta fazer se não houver args na linha de comandos
 // falta verificar args linha de comandos
 // falta se RG NOK tem que dar para registar outro
+// faltam frees dos mallcos
 
 
 char *PDIP = NULL;
@@ -85,7 +86,11 @@ void makeConnection() {
     errcode = getaddrinfo(ASIP, ASport, &hints, &res);
     if (errcode != 0) exit(1); // correto?
 
-    if(bind(fd,res->ai_addr,res->ai_addrlen)==-1)/*error*/exit(1);
+    while (bind(fd,res->ai_addr,res->ai_addrlen)==  -1)
+    {puts("Can't bind");
+    }
+    
+    //if(bind(fd,res->ai_addr,res->ai_addrlen)==  -1)/*error*/exit(1);
     
     while (1) {
         testfds = inputs;
