@@ -284,9 +284,9 @@ int verifyAnswer(char *answer) {
     else if (strcmp(answer, "RRQ EFOP\n") == 0) printf("Invalid file operation: %s", answer);
     else if (strcmp(answer, "RAU 0\n") == 0) printf("Two-factor authentication failed: %s", answer);
     else if (strcmp(answer, "ERR\n") == 0) printf("ERROR\n");
-    else {
+    else if (answer != NULL) {
         sscanf(answer, "RAU %d", tid); // verificar se TID é correto?
-        printf("Two-factor authentication successful: %s",answer);
+        printf("Two-factor authentication successful: %s", answer);
     }
 
     return 0;
