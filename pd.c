@@ -86,7 +86,7 @@ void makeConnection() {
     errcode = getaddrinfo(ASIP, ASport, &hints, &res_as);
     if (errcode != 0) exit(1); // correto?
 
-    errcode = gettaddrinfo(PDIP, PDport, &hints, &res_pd);
+    errcode = getaddrinfo(PDIP, PDport, &hints, &res_pd);
     if (errcode != 0) exit(1);
 
     while (bind(fd,res_pd->ai_addr,res_pd->ai_addrlen) ==  -1)
