@@ -64,7 +64,7 @@ void makeConnection() {
     int fd, errcode = 0, out_fds;
     ssize_t n;
     socklen_t addrlen;
-    struct addrinfo hints, *res;
+    struct addrinfo hints, *res_as, *res_pd;
     struct sockaddr_in addr;
     char buffer[MAX_INPUT], command[5], second[6], third[9], answer[128], message[42]; //change answer
     fd_set inputs, testfds;
@@ -83,14 +83,17 @@ void makeConnection() {
 
     addr.sin_port = htons(atoi(PDport));
 
-    errcode = getaddrinfo(ASIP, ASport, &hints, &res);
+    errcode = getaddrinfo(ASIP, ASport, &hints, &res_as);
     if (errcode != 0) exit(1); // correto?
 
-    while (bind(fd,res->ai_addr,res->ai_addrlen)==  -1)
+    errcode = gettaddrinfo(PDIP, PDport, &hints, &res_pd);
+    if (errcode != 0) exit(1);
+
+    while (bind(fd,res_pd->ai_addr,res_pd->ai_addrlen) ==  -1)
     {puts("Can't bind");
     }
     
-    //if(bind(fd,res->ai_addr,res->ai_addrlen)==  -1)/*error*/exit(1);
+    //if(bind(fd,res_as->ai_addr,res_as->ai_addrlen)==  -1)/*error*/exit(1);
     
     while (1) {
         testfds = inputs;
@@ -124,7 +127,7 @@ void makeConnection() {
                     if (errcode == 0) sprintf(message, "REG %s %s %s %s\n", second, third, PDIP, PDport);
                     else sprintf(message, "UNR %s %s\n", uid, pass);
 
-                    n = sendto(fd, message, strlen(message), 0, res->ai_addr, res->ai_addrlen); // pode ser blocking?
+                    n = sendto(fd, message, strlen(message), 0, res_as->ai_addr, res_as->ai_addrlen); // pode ser blocking?
                     if (n == ERROR) puts("ERROR");//?????
                 }
                 else if (FD_ISSET(fd, &testfds)) {
@@ -136,7 +139,7 @@ void makeConnection() {
                     n = verifyAnswer(answer);
                     if (n == 2) {
                         sprintf(message, "RVC OK\n");
-                        n = sendto(fd, message, strlen(message), 0, res->ai_addr, res->ai_addrlen);
+                        n = sendto(fd, message, strlen(message), 0, res_as->ai_addr, res_as->ai_addrlen);
                         if (n == ERROR) puts("ERROR");
                     }
                     // falta para RVC NOK
@@ -146,7 +149,8 @@ void makeConnection() {
         if (errcode == EXIT) break;
     }
 
-    freeaddrinfo(res);
+    freeaddrinfo(res_as);
+    freeaddrinfo(res_pd);
     close(fd);
 }
 
