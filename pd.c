@@ -84,6 +84,8 @@ void makeConnection() {
 
     errcode = getaddrinfo(ASIP, ASport, &hints, &res);
     if (errcode != 0) exit(1); // correto?
+
+    if(bind(fd,res->ai_addr,res->ai_addrlen)==-1)/*error*/exit(1);
     
     while (1) {
         testfds = inputs;
