@@ -8,17 +8,15 @@
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
+#include "verify.h"
 
 
 #define MAX_INPUT 20
-#define PASS_LENGTH 8
-#define ERROR -1
 #define EXIT 1
 
 // falta fazer se não houver args na linha de comandos
 // falta verificar args linha de comandos
 // falta se RG NOK tem que dar para registar outro
-// faltam frees dos mallcos
 
 
 char *PDIP = NULL;
@@ -34,8 +32,6 @@ void parseArgs(int argc, char **argv);
 int parseInput(char *buffer, char *command, char *uid, char *pass);
 void makeConnection();
 int verifyCommand(char *command);
-int verifyUid(char *uid);
-int verifyPass(char *pass);
 int verifyAnswer(char *answer);
 
 
@@ -68,7 +64,6 @@ void makeConnection() {
     struct sockaddr_in addr;
     char buffer[MAX_INPUT], command[5], second[6], third[9], answer[128], message[42]; //change answer
     fd_set inputs, testfds;
-    struct timeval timeout;
 
     fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd == -1) exit(1);  // correto?
@@ -89,21 +84,14 @@ void makeConnection() {
     errcode = getaddrinfo(PDIP, PDport, &hints, &res_pd);
     if (errcode != 0) exit(1);
 
-    while (bind(fd,res_pd->ai_addr,res_pd->ai_addrlen) ==  -1)
-    {puts("Can't bind");
-    }
-    
-    //if(bind(fd,res_as->ai_addr,res_as->ai_addrlen)==  -1)/*error*/exit(1);
-    
+    while (bind(fd,res_pd->ai_addr,res_pd->ai_addrlen) ==  -1) puts("Can't bind");
+        
     while (1) {
         testfds = inputs;
-        timeout.tv_sec = 10;
-        timeout.tv_usec = 0;
 
-        out_fds = select(FD_SETSIZE, &testfds, (fd_set *)NULL, (fd_set *)NULL, &timeout);
+        out_fds = select(FD_SETSIZE, &testfds, (fd_set *)NULL, (fd_set *)NULL, (struct timeval *)NULL);
         switch (out_fds) {
             case 0:
-            puts("no fd available");
                 break;
             case -1:
                 perror("select"); // certo?
@@ -117,7 +105,6 @@ void makeConnection() {
                 memset(third, 0, sizeof(third));
 
                 if (FD_ISSET(0, &testfds)) {
-                    puts("input");
                     fgets(buffer, MAX_INPUT, stdin); // se a pass for maior (password1) ele não vai ler o 1 e vai ter sucesso ao mandar para o server. Correto?
                     errcode = parseInput(buffer, command, second, third);
 
@@ -131,7 +118,6 @@ void makeConnection() {
                     if (n == ERROR) puts("ERROR");//?????
                 }
                 else if (FD_ISSET(fd, &testfds)) {
-                    puts("read socket");
                     addrlen = sizeof(addr);
                     n = recvfrom(fd, answer, 128, 0, (struct sockaddr *)&addr, &addrlen);
                     if (n == ERROR) puts("ERROR");//??????
@@ -139,7 +125,7 @@ void makeConnection() {
                     n = verifyAnswer(answer);
                     if (n == 2) {
                         sprintf(message, "RVC OK\n");
-                        n = sendto(fd, message, strlen(message), 0, res_as->ai_addr, res_as->ai_addrlen);
+                        n = sendto(fd, message, strlen(message), 0, (struct sockaddr *)&addr.sin_addr, addrlen); //mudar
                         if (n == ERROR) puts("ERROR");
                     }
                     // falta para RVC NOK
@@ -186,32 +172,6 @@ int verifyCommand(char *command) {
 
     printf("Invalid command\n");
     return ERROR;
-}
-
-
-int verifyUid(char *uid) {
-    if ((strlen(uid) == 5 && atoi(uid) != 0) || strcmp(uid, "00000") == 0) return 0;
-
-    printf("Invalid UID\n");
-    return ERROR;
-}
-
-
-int verifyPass(char *pass) {
-    char *temp = pass;
-
-    if (strlen(pass) != PASS_LENGTH) {
-        printf("Invalid password\n");
-        return ERROR;
-    }
-
-    while (*temp++) {
-        if (!(*temp >= 'a' && *temp <= 'z') && !(*temp >= 'A' && *temp <= 'Z') && !(*temp >= '0' && *temp <= '9') && *temp != '\0') {
-            printf("Invalid password\n");
-            return ERROR;
-        }
-    }
-    return 0;
 }
 
 

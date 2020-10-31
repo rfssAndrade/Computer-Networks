@@ -8,9 +8,8 @@
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
+#include "verify.h"
 
-#define ERROR -1
-#define PASS_LENGTH 8
 
 char *ASIP = NULL;
 char *ASport = NULL;
@@ -26,10 +25,6 @@ void parseArgs(int argc, char **argv);
 void makeConnection();
 int parseInput(char *buffer, char *command, char *second, char *third);
 int verifyCommand(char *command);
-int verifyUid(char *uid);
-int verifyPass(char *pass);
-int verifyFop(char *fop, char *fname);
-int verifyVc(char *vc);
 void formatMessage(char *message, int code, char *second, char *third);
 void sendMessage(int code, int fd_as, int fd_fs, char *message);
 void readMessage(int fd, char *answer);
@@ -183,48 +178,6 @@ int verifyCommand(char *command) {
 }
 
 
-int verifyUid(char *uid) {
-    if ((strlen(uid) == 5 && atoi(uid) != 0) || strcmp(uid, "00000") == 0) return 0;
-
-    printf("Invalid UID\n");
-    return ERROR;
-}
-
-
-int verifyPass(char *pass) {
-    char *temp = pass;
-
-    if (strlen(pass) != PASS_LENGTH) {
-        printf("Invalid password\n");
-        return ERROR;
-    }
-
-    while (*temp++) {
-        if (!(*temp >= 'a' && *temp <= 'z') && !(*temp >= 'A' && *temp <= 'Z') && !(*temp >= '0' && *temp <= '9') && *temp != '\0') {
-            printf("Invalid password\n");
-            return ERROR;
-        }
-    }
-    return 0;
-}
-
-int verifyFop(char *fop, char *fname) {
-    if (strcmp(fop, "R") == 0 || strcmp(fop, "U") == 0 || strcmp(fop, "D") == 0 || strcmp(fop, "L") == 0 || strcmp(fop, "X") == 0) return 0;
-    //verify fname
-    printf("Invalid operation\n");
-    return ERROR;
-}
-
-
-int verifyVc(char *vc) {
-    printf("--%s--", vc);
-    if ((strlen(vc) == 4 && atoi(vc) != 0) || strcmp(vc, "0000") == 0) return 0; // modify to check if VC is right
-
-    printf("Invalid VC\n");
-    return ERROR;
-}
-
-
 void formatMessage(char *message, int code, char *second, char *third) {
     if (code == 0) sprintf(message, "LOG %s %s\n", second, third);
     else if (code == 1) {
@@ -284,8 +237,8 @@ int verifyAnswer(char *answer) {
     else if (strcmp(answer, "RRQ EFOP\n") == 0) printf("Invalid file operation: %s", answer);
     else if (strcmp(answer, "RAU 0\n") == 0) printf("Two-factor authentication failed: %s", answer);
     else if (strcmp(answer, "ERR\n") == 0) printf("ERROR\n");
-    else if (answer != NULL && strlen(answer) > 0) { // mudar
-        sscanf(answer, "RAU %d", tid); // verificar se TID é correto?
+    else if (answer != NULL && strlen(answer) > 3) { // mudar
+        sscanf(answer, "RAU %d", &tid); // verificar se TID é correto?
         printf("Two-factor authentication successful: %s", answer);
     }
 
