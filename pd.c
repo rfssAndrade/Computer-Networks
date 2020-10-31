@@ -12,7 +12,7 @@
 
 
 #define MAX_INPUT 20
-#define EXIT 1
+
 
 // falta fazer se não houver args na linha de comandos
 // falta verificar args linha de comandos
@@ -31,7 +31,6 @@ char *pass = NULL;
 void parseArgs(int argc, char **argv);
 int parseInput(char *buffer, char *command, char *uid, char *pass);
 void makeConnection();
-int verifyCommand(char *command);
 int verifyAnswer(char *answer);
 
 
@@ -162,16 +161,6 @@ int parseInput(char *buffer, char *command, char *second, char *third) {
         }
     }
     return code;  
-}
-
-
-int verifyCommand(char *command) {
-    if (strcmp(command, "exit") == 0) return EXIT;
-
-    if (strcmp(command, "reg") == 0) return 0;
-
-    printf("Invalid command\n");
-    return ERROR;
 }
 
 

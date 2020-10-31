@@ -5,6 +5,23 @@
 #include "verify.h"
 
 
+int verifyCommand(char *command) {
+    if (strcmp(command, "reg") == 0) return REG;
+    if (strcmp(command, "login") == 0) return LOGIN;
+    if (strcmp(command, "req") == 0) return REQ;
+    if (strcmp(command, "val") == 0) return VAL;
+    if (strcmp(command, "list") == 0 || strcmp(command, "l") == 0) return LIST;
+    if (strcmp(command, "retrieve") == 0 || strcmp(command, "r") == 0) return RETRIEVE;
+    if (strcmp(command, "upload") == 0 || strcmp(command, "u") == 0) return UPLOAD;
+    if (strcmp(command, "delete") == 0 || strcmp(command, "d") == 0) return DELETE;
+    if (strcmp(command, "remove") == 0 || strcmp(command, "x") == 0) return REMOVE;
+    if (strcmp(command, "exit") == 0) return EXIT;
+    
+    printf("Invalid command\n");
+    return ERROR;
+}
+
+
 int verifyUid(char *uid) {
     if ((strlen(uid) == UID_SIZE && atoi(uid) != 0) || strcmp(uid, "00000") == 0) return 0;
 

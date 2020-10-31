@@ -24,7 +24,6 @@ int tid = -1;
 void parseArgs(int argc, char **argv);
 void makeConnection();
 int parseInput(char *buffer, char *command, char *second, char *third);
-int verifyCommand(char *command);
 void formatMessage(char *message, int code, char *second, char *third);
 void sendMessage(int code, int fd_as, int fd_fs, char *message);
 void readMessage(int fd, char *answer);
@@ -59,7 +58,6 @@ void makeConnection() {
     char buffer[128]; // verificar tamanho
     char command[9], second[6], third[25], answer[128], message[128]; // verificar tamanhos, preciso mallocs?
     fd_set inputs, testfds;
-    struct timeval timeout;
 
     fd_as = socket(AF_INET, SOCK_STREAM, 0);
     if (fd_as == -1) exit(1);
@@ -90,10 +88,8 @@ void makeConnection() {
 
     while (1) {
         testfds = inputs;
-        timeout.tv_sec = 10;
-        timeout.tv_usec = 0;
 
-        out_fds = select(FD_SETSIZE, &testfds, (fd_set *)NULL, (fd_set *)NULL, &timeout);
+        out_fds = select(FD_SETSIZE, &testfds, (fd_set *)NULL, (fd_set *)NULL, (struct timeval *)NULL);
 
         switch (out_fds) {
             case 0:
@@ -125,7 +121,7 @@ void makeConnection() {
             }
             break;
         }
-        if (code == 3) break;
+        if (code == EXIT) break;
     }
 
     freeaddrinfo(res_as);
@@ -140,9 +136,9 @@ int parseInput(char *buffer, char *command, char *second, char *third) {
     sscanf(buffer, "%s %s %s", command, second, third);
     code = verifyCommand(command);
 
-    if (code == 3) return code;
+    if (code == EXIT) return code;
 
-    else if (code == 0) {
+    else if (code == LOGIN) {
         if (isLogged) {
             printf("You are already logged in\n");
             return ERROR;
@@ -157,42 +153,32 @@ int parseInput(char *buffer, char *command, char *second, char *third) {
         printf("You aren't logged in\n");
         return ERROR;
     }
-    else if (code == 1) {
+    else if (code == REQ) {
         if (verifyFop(second, third) != 0) return ERROR;
     }
 
-    else if (code == 2) {
+    else if (code == VAL) {
         if (verifyVc(second) != 0) return ERROR;
     }
     return code;
 }
 
-int verifyCommand(char *command) {
-    if (strcmp(command, "login") == 0) return 0;
-    if (strcmp(command, "req") == 0) return 1;
-    if (strcmp(command, "val") == 0) return 2;
-    if (strcmp(command, "exit") == 0) return 3;
-
-    printf("Invalid command\n");
-    return -1;
-}
-
 
 void formatMessage(char *message, int code, char *second, char *third) {
-    if (code == 0) sprintf(message, "LOG %s %s\n", second, third);
-    else if (code == 1) {
+    if (code == LOGIN) sprintf(message, "LOG %s %s\n", second, third);
+    else if (code == REQ) {
         rid = rand() % 10000;
         if (1) {
             sprintf(message, "REQ %s %d %s\n", uid, rid, second);
         }
         else sprintf(message, "REQ %s %d %s %s\n", uid, rid, second, third);
     }
-    else if (code == 2) sprintf(message, "AUT %s %d %s\n", uid, rid, second);
+    else if (code == VAL) sprintf(message, "AUT %s %d %s\n", uid, rid, second);
 }
 
 
 void sendMessage(int code, int fd_as, int fd_fs, char *message) {
-    int fd = code < 3 ? fd_as : fd_fs;
+    int fd = code < 4 ? fd_as : fd_fs;
     int nleft = strlen(message);
     int nwritten = 0;
     char *ptr = message;
