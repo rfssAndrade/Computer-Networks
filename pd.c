@@ -143,24 +143,33 @@ void makeConnection() {
 int parseInput(char *buffer, char *command, char *second, char *third) {
     int code;
 
-    if (!isRegistered) {
-        sscanf(buffer, "%s %s %s", command, second, third); // verificar?
-        code = verifyCommand(command);
-        if (code == REG && verifyUid(second) == 0 && verifyPass(third) == 0) {
-            strcpy(uid, second);
-            strcpy(pass, third);
-        }
-        else return ERROR;
-    }
-    else {
-        sscanf(buffer, "%s", command);
-        code = verifyCommand(command);
-        if (code == REG) {
-            printf("You can only register one user\n");
+    sscanf(buffer, "%s %s %s", command, second, third); // verificar?
+
+    code = verifyCommand(command);
+    switch (code) {
+        case REG:
+            if (isRegistered) {
+                printf("You can only register one user\n");
+                code = ERROR;
+                break;
+            }
+            else if (verifyUid(second) == 0 && verifyPass(third) == 0) {
+                strcpy(uid, second);
+                strcpy(pass, third);
+            }
+            else code = ERROR;
+            break;
+
+        case EXIT:
+            break;
+
+        default:
+            printf("Invalid command\n");
             code = ERROR;
-        }
+            break;
     }
-    return code;  
+
+    return code;
 }
 
 

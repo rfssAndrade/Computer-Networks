@@ -134,32 +134,42 @@ int parseInput(char *buffer, char *command, char *second, char *third) {
     int code;
 
     sscanf(buffer, "%s %s %s", command, second, third);
+    
     code = verifyCommand(command);
-
-    if (code == EXIT) return code;
-
-    else if (code == LOGIN) {
-        if (isLogged) {
-            printf("You are already logged in\n");
-            return ERROR;
-        }
-        else if (verifyUid(second) == 0 && verifyPass(third) == 0) {
-            strcpy(uid, second);
-            strcpy(pass, third);
-        }
-        else return ERROR;
-    }
-    else if (!isLogged) {
+    if (code != LOGIN && !isLogged) {
         printf("You aren't logged in\n");
         return ERROR;
     }
-    else if (code == REQ) {
-        if (verifyFop(second, third) != 0) return ERROR;
+
+    switch (code) {
+        case LOGIN:
+            if (isLogged) {
+                printf("You are already logged in\n");
+                code = ERROR;
+            }
+            else if (verifyUid(second) == 0 && verifyPass(third) == 0) {
+                strcpy(uid, second);
+                strcpy(pass, third);
+            }
+            else code = ERROR;
+            break;
+
+        case REQ:
+            if (verifyFop(second, third) != 0) code = ERROR;
+            break;
+
+        case VAL:
+            if (verifyVc(second) != 0) code = ERROR;
+            break;
+            
+        case EXIT:
+            break;
+    
+        default:
+            code = ERROR;
+            break;
     }
 
-    else if (code == VAL) {
-        if (verifyVc(second) != 0) return ERROR;
-    }
     return code;
 }
 
