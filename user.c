@@ -109,8 +109,7 @@ void makeConnection() {
                 fgets(buffer, 128, stdin);
                 code = parseInput(buffer, command, second, third);
 
-                if (code == ERROR) break;
-                if (code == EXIT) break;
+                if (code == ERROR || code == EXIT) break;
 
                 formatMessage(message, code, second, third);
                 sendMessage(code, fd_as, fd_fs, message);
@@ -161,7 +160,7 @@ int parseInput(char *buffer, char *command, char *second, char *third) {
         case VAL:
             if (verifyVc(second) != 0) code = ERROR;
             break;
-            
+
         case EXIT:
             break;
     
@@ -184,6 +183,21 @@ void formatMessage(char *message, int code, char *second, char *third) {
         else sprintf(message, "REQ %s %d %s %s\n", uid, rid, second, third);
     }
     else if (code == VAL) sprintf(message, "AUT %s %d %s\n", uid, rid, second);
+
+    switch (code) {
+        case LOGIN:
+            sprintf(message, "LOG %s %s\n", second, third);
+            break;
+
+        case REQ:
+            rid = rand() % 10000;
+            if (third == NULL) sprintf(message, "REQ %s %d %s\n", uid, rid, second);
+            else sprintf(message, "REQ %s %d %s %s\n", uid, rid, second, third);
+            break;
+
+        case VAL:
+            sprintf(message, "AUT %s %d %s\n", uid, rid, second);
+    }
 }
 
 

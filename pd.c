@@ -75,7 +75,7 @@ void makeConnection() {
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_DGRAM;
 
-    addr.sin_port = htons(atoi(PDport));
+    //addr.sin_port = htons(atoi(PDport));
 
     errcode = getaddrinfo(ASIP, ASport, &hints, &res_as);
     if (errcode != 0) exit(1); // correto?
@@ -107,8 +107,7 @@ void makeConnection() {
                     fgets(buffer, MAX_INPUT, stdin); // se a pass for maior (password1) ele não vai ler o 1 e vai ter sucesso ao mandar para o server. Correto?
                     errcode = parseInput(buffer, command, second, third);
 
-                    if (errcode == ERROR) break; // verify se é break ou continue
-                    if (errcode == EXIT && !isRegistered) break; // specific case where the user never registers
+                    if (errcode == ERROR || (errcode == EXIT && !isRegistered)) break;
 
                     if (errcode == REG) sprintf(message, "REG %s %s %s %s\n", second, third, PDIP, PDport);
                     else sprintf(message, "UNR %s %s\n", uid, pass);
@@ -124,7 +123,7 @@ void makeConnection() {
                     n = verifyAnswer(answer);
                     if (n == 2) {
                         sprintf(message, "RVC OK\n");
-                        n = sendto(fd, message, strlen(message), 0, (struct sockaddr *)&addr.sin_addr, addrlen); //mudar
+                        n = sendto(fd, message, strlen(message), 0, (struct sockaddr *)&addr, addrlen); //mudar
                         if (n == ERROR) puts("ERROR");
                     }
                     // falta para RVC NOK

@@ -17,7 +17,7 @@ int verifyCommand(char *command) {
     if (strcmp(command, "remove") == 0 || strcmp(command, "x") == 0) return REMOVE;
     if (strcmp(command, "exit") == 0) return EXIT;
     
-    printf("Invalid command\n");
+    //printf("Invalid command\n");
     return ERROR;
 }
 
@@ -49,7 +49,7 @@ int verifyPass(char *pass) {
 
 
 int verifyFop(char *fop, char *fname) {
-    if (strcmp(fop, "L") == 0 || strcmp(fop, "X") == 0) return 0; //fname needs to be null?
+    if ((strcmp(fop, "L") == 0 || strcmp(fop, "X") == 0) && fname == NULL) return 0; //fname needs to be null?
     else if ((strcmp(fop, "R") == 0 || strcmp(fop, "U") == 0 || strcmp(fop, "D") == 0) && verifyFname(fname) == 0) return 0;
 
     printf("Invalid operation\n");
@@ -61,7 +61,7 @@ int verifyFname(char *fname) {
     char *temp = fname;
     int extension = 0;
 
-    if (fname == NULL || strlen(fname) > FILE_SIZE || strlen(fname) < 1) {
+    if (fname == NULL || strlen(fname) > FILE_SIZE) {
         printf("Invalid filename\n");
         return ERROR;
     }
