@@ -108,7 +108,7 @@ void makeConnection() {
                     errcode = parseInput(buffer, command, second, third);
 
                     if (errcode == ERROR) break; // verify se é break ou continue
-                    if (errcode == 1 && !isRegistered) break; // specific case where the user never registers
+                    if (errcode == EXIT && !isRegistered) break; // specific case where the user never registers
 
                     if (errcode == 0) sprintf(message, "REG %s %s %s %s\n", second, third, PDIP, PDport);
                     else sprintf(message, "UNR %s %s\n", uid, pass);
@@ -146,7 +146,7 @@ int parseInput(char *buffer, char *command, char *second, char *third) {
     if (!isRegistered) {
         sscanf(buffer, "%s %s %s", command, second, third); // verificar?
         code = verifyCommand(command);
-        if (code == 0 && verifyUid(second) == 0 && verifyPass(third) == 0) {
+        if (code == REG && verifyUid(second) == 0 && verifyPass(third) == 0) {
             strcpy(uid, second);
             strcpy(pass, third);
         }
@@ -155,7 +155,7 @@ int parseInput(char *buffer, char *command, char *second, char *third) {
     else {
         sscanf(buffer, "%s", command);
         code = verifyCommand(command);
-        if (code == 0) {
+        if (code == REG) {
             printf("You can only register one user\n");
             code = ERROR;
         }
