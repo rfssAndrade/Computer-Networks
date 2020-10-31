@@ -110,7 +110,7 @@ void makeConnection() {
                 code = parseInput(buffer, command, second, third);
 
                 if (code == ERROR) break;
-                if (code == 3) break;
+                if (code == EXIT) break;
 
                 formatMessage(message, code, second, third);
                 sendMessage(code, fd_as, fd_fs, message);
@@ -178,7 +178,7 @@ void formatMessage(char *message, int code, char *second, char *third) {
 
 
 void sendMessage(int code, int fd_as, int fd_fs, char *message) {
-    int fd = code < 4 ? fd_as : fd_fs;
+    int fd = code < 5 ? fd_as : fd_fs;
     int nleft = strlen(message);
     int nwritten = 0;
     char *ptr = message;
