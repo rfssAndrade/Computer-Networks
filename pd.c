@@ -110,7 +110,7 @@ void makeConnection() {
                     if (errcode == ERROR) break; // verify se é break ou continue
                     if (errcode == EXIT && !isRegistered) break; // specific case where the user never registers
 
-                    if (errcode == 0) sprintf(message, "REG %s %s %s %s\n", second, third, PDIP, PDport);
+                    if (errcode == REG) sprintf(message, "REG %s %s %s %s\n", second, third, PDIP, PDport);
                     else sprintf(message, "UNR %s %s\n", uid, pass);
 
                     n = sendto(fd, message, strlen(message), 0, res_as->ai_addr, res_as->ai_addrlen); // pode ser blocking?
