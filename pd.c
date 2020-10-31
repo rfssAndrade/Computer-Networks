@@ -176,7 +176,7 @@ int verifyCommand(char *command) {
 
 
 int verifyAnswer(char *answer) {
-    char temp_uid[6], vc[5], fop, fname[25]; // verificar fname?
+    char temp_uid[6], vc[5], fop[2], fname[25]; // verificar fname?
 
     if (strcmp(answer, "RRG OK\n") == 0) {
         isRegistered = 1;
@@ -189,8 +189,8 @@ int verifyAnswer(char *answer) {
     else if (strcmp(answer, "ERR\n") == 0) printf("ERROR\n");
     else {
         printf("%s", answer);
-        sscanf(answer, "VLC %s %s %c %s", temp_uid, vc, fop, fname); // verificar args?
-        printf("VC = %s, %c: %s\n", vc, fop, fname);
+        sscanf(answer, "VLC %s %s %s %s", temp_uid, vc, fop, fname); // verificar args?
+        printf("VC = %s, %s: %s\n", vc, fop, fname);
         return 2;
     }
 
