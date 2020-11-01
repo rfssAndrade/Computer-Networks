@@ -155,6 +155,7 @@ int parseInput(char *buffer, char *command, char *second, char *third) {
 
         case REQ:
             if (verifyFop(second, third) != 0) code = ERROR;
+            printf("SWITCH %s %s\n", second, third);
             break;
 
         case VAL:
