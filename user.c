@@ -183,6 +183,7 @@ void formatMessage(char *message, int code, char *second, char *third) {
             rid = rand() % 10000;
             if (third == NULL) sprintf(message, "REQ %s %d %s\n", uid, rid, second);
             else sprintf(message, "REQ %s %d %s %s\n", uid, rid, second, third);
+            printf("%s", message);
             break;
 
         case VAL:
