@@ -131,6 +131,7 @@ void makeConnection() {
                 }
 
                 else if (FD_ISSET(fd_server, &testfds)) {
+                    addr_server.sin_port = htons(atoi(PDport));
                     addrlen = sizeof(addr_server);
                     n = recvfrom(fd_server, answer, 128, 0, (struct sockaddr *)&addr_server, &addrlen);
                     if (n == ERROR) puts("ERROR");//??????
