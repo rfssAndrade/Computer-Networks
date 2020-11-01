@@ -32,6 +32,10 @@ void parseArgs(int argc, char **argv);
 int parseInput(char *buffer, char *command, char *uid, char *pass);
 void makeConnection();
 int verifyAnswer(char *answer);
+void formatMessage(char *message, int code, char *second, char *third);
+void sendMessageClient(int fd, char *message, struct addrinfo *res);
+void readMessageClient(int fd, char *answer, struct sockaddr_in addr);
+void sendMessageServer(int fd, char *message, struct sockaddr_in addr);
 
 
 int main(int argc, char **argv) {
@@ -116,29 +120,27 @@ void makeConnection() {
 
                     if (errcode == ERROR || (errcode == EXIT && !isRegistered)) break;
 
-                    if (errcode == REG) sprintf(message, "REG %s %s %s %s\n", second, third, PDIP, PDport);
-                    else sprintf(message, "UNR %s %s\n", uid, pass);
-
-                    n = sendto(fd_client, message, strlen(message), 0, res_as->ai_addr, res_as->ai_addrlen); // pode ser blocking?
-                    if (n == ERROR) puts("ERROR");//?????
+                    formatMessage(message, errcode, second, third);
+                    sendMessageClient(fd_client, message, res_as);
                 }
                 else if (FD_ISSET(fd_client, &testfds)) {
-                    addrlen = sizeof(addr_client);
-                    n = recvfrom(fd_client, answer, 128, 0, (struct sockaddr *)&addr_client, &addrlen);
-                    if (n == ERROR) puts("ERROR");//??????
-                    
+                    // addrlen = sizeof(addr_client);
+                    // n = recvfrom(fd_client, answer, 128, 0, (struct sockaddr *)&addr_client, &addrlen);
+                    // if (n == ERROR) puts("ERROR");//??????
+                    readMessageClient(fd_client, answer, addr_client);
                     verifyAnswer(answer);
                 }
                 else if (FD_ISSET(fd_server, &testfds)) {
-                    addrlen = sizeof(addr_server);
-                    n = recvfrom(fd_server, answer, 128, 0, (struct sockaddr *)&addr_server, &addrlen);
-                    if (n == ERROR) puts("ERROR");//??????
-
+                    // addrlen = sizeof(addr_server);
+                    // n = recvfrom(fd_server, answer, 128, 0, (struct sockaddr *)&addr_server, &addrlen);
+                    // if (n == ERROR) puts("ERROR");//??????
+                    readMessageClient(fd_server, answer, addr_client);
                     //n = verifyAnswer(answer);
                     printf("%s", answer);
                     sprintf(message, "RVC %s OK\n", uid);
-                    n = sendto(fd_server, message, strlen(message), 0, (struct sockaddr *)&addr_server, addrlen); //mudar
-                    if (n == ERROR) puts("ERROR");
+                    sendMessageServer(fd_server, message, addr_client);
+                    // n = sendto(fd_server, message, strlen(message), 0, (struct sockaddr *)&addr_server, addrlen); //mudar
+                    // if (n == ERROR) puts("ERROR");
                     // falta para RVC NOK
                 }
                 break;
@@ -183,6 +185,44 @@ int parseInput(char *buffer, char *command, char *second, char *third) {
     }
 
     return code;
+}
+
+
+void formatMessage(char *message, int code, char *second, char *third) {
+    switch (code) {
+        case REG:
+            sprintf(message, "REG %s %s %s %s\n", second, third, PDIP, PDport);
+            break;
+        case EXIT:
+            sprintf(message, "UNR %s %s\n", uid, pass);
+            break;
+    }
+}
+
+
+void sendMessageClient(int fd, char *message, struct addrinfo *res) {
+    int code;
+
+    code = sendto(fd, message, strlen(message), 0, res->ai_addr, res->ai_addrlen);
+    if (code == ERROR) puts("ERROR");//?????
+}
+
+
+void readMessageClient(int fd, char *answer, struct sockaddr_in addr) {
+    int code;
+    socklen_t addrlen = sizeof(addr);
+
+    code = recvfrom(fd, answer, 128, 0, (struct sockaddr *)&addr, &addrlen);
+    if (code == ERROR) puts("ERROR");
+}
+
+
+void sendMessageServer(int fd, char *message, struct sockaddr_in addr) {
+    int code;
+    socklen_t addrlen = sizeof(addr);
+
+    code = sendto(fd, message, strlen(message), 0, (struct sockaddr *)&addr, addrlen); //mudar
+    if (code == ERROR) puts("ERROR");
 }
 
 
