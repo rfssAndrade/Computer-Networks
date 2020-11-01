@@ -134,11 +134,11 @@ void makeConnection() {
                     // addrlen = sizeof(addr_server);
                     // n = recvfrom(fd_server, answer, 128, 0, (struct sockaddr *)&addr_server, &addrlen);
                     // if (n == ERROR) puts("ERROR");//??????
-                    readMessageClient(fd_server, answer, addr_client);
+                    readMessageClient(fd_server, answer, addr_server);
                     //n = verifyAnswer(answer);
                     printf("%s", answer);
                     sprintf(message, "RVC %s OK\n", uid);
-                    sendMessageServer(fd_server, message, addr_client);
+                    sendMessageServer(fd_server, message, addr_server);
                     // n = sendto(fd_server, message, strlen(message), 0, (struct sockaddr *)&addr_server, addrlen); //mudar
                     // if (n == ERROR) puts("ERROR");
                     // falta para RVC NOK
