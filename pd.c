@@ -59,7 +59,7 @@ void makeConnection() {
     int fd, errcode = 0, out_fds;
     ssize_t n;
     socklen_t addrlen;
-    struct addrinfo hints, *res_as, *res_pd;
+    struct addrinfo hints_as, hints_pd, *res_as, *res_pd;
     struct sockaddr_in addr;
     char buffer[MAX_INPUT], command[5], second[6], third[9], answer[128], message[42]; //change answer
     fd_set inputs, testfds;
@@ -71,16 +71,20 @@ void makeConnection() {
     FD_SET(0, &inputs);
     FD_SET(fd, &inputs);
 
-    memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_DGRAM;
+    memset(&hints_as, 0, sizeof hints);
+    hints_as.ai_family = AF_INET;
+    hints_as.ai_socktype = SOCK_DGRAM;
 
     //addr.sin_port = htons(atoi(PDport));
 
-    errcode = getaddrinfo(ASIP, ASport, &hints, &res_as);
+    errcode = getaddrinfo(ASIP, ASport, &hints_as, &res_as);
     if (errcode != 0) exit(1); // correto?
 
-    errcode = getaddrinfo(PDIP, PDport, &hints, &res_pd);
+    memset(&hints_pd, 0, sizeof hints);
+    hints_pd.ai_family = AF_INET;
+    hints_pd.ai_socktype = SOCK_DGRAM;
+    hints_pd.ai_flags = AI_PASSIVE;
+    errcode = getaddrinfo(PDIP, PDport, &hints_pd, &res_pd);
     if (errcode != 0) exit(1);
 
     while (bind(fd,res_pd->ai_addr,res_pd->ai_addrlen) ==  -1) puts("Can't bind");
@@ -123,6 +127,7 @@ void makeConnection() {
                     n = verifyAnswer(answer);
                     if (n == 2) {
                         sprintf(message, "RVC OK\n");
+                        printf("%s", message);
                         n = sendto(fd, message, strlen(message), 0, (struct sockaddr *)&addr, addrlen); //mudar
                         if (n == ERROR) puts("ERROR");
                     }

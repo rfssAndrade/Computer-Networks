@@ -49,10 +49,7 @@ int verifyPass(char *pass) {
 
 
 int verifyFop(char *fop, char *fname) {
-    if (strcmp(fop, "L") == 0 || strcmp(fop, "X") == 0) {
-        memset(fname, 0, sizeof(fname));
-        return 0;
-    } //fname needs to be null?
+    if (strcmp(fop, "L") == 0 || strcmp(fop, "X") == 0) return 0;
     else if ((strcmp(fop, "R") == 0 || strcmp(fop, "U") == 0 || strcmp(fop, "D") == 0) && verifyFname(fname) == 0) return 0;
 
     printf("Invalid operation\n");
