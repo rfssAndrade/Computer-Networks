@@ -113,6 +113,7 @@ void makeConnection() {
 
                 formatMessage(message, code, second, third);
                 sendMessage(code, fd_as, fd_fs, message);
+                puts("sent");
             }
             else if(FD_ISSET(fd_as, &testfds)) {
                 readMessage(fd_as, answer);
@@ -246,7 +247,7 @@ int verifyAnswer(char *answer) {
     else if (strcmp(answer, "RRQ EUSER\n") == 0) printf("Wrong UID: %s", answer);
     else if (strcmp(answer, "RRQ EFOP\n") == 0) printf("Invalid file operation: %s", answer);
     else if (strcmp(answer, "RAU 0\n") == 0) printf("Two-factor authentication failed: %s", answer);
-    else if (strcmp(answer, "ERR\n") == 0) printf("ERROR\n");
+    else if (strcmp(answer, "ERR\n") == 0) printf("ERROR: %s\n", answer);
     else if (answer != NULL && strlen(answer) > 3) { // mudar
         sscanf(answer, "RAU %d", &tid); // verificar se TID é correto?
         printf("Two-factor authentication successful: %s", answer);
