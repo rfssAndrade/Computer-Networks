@@ -113,7 +113,6 @@ void makeConnection() {
 
                 formatMessage(message, code, second, third);
                 sendMessage(code, fd_as, fd_fs, message);
-                puts("sent");
             }
             else if(FD_ISSET(fd_as, &testfds)) {
                 readMessage(fd_as, answer);
@@ -175,16 +174,6 @@ int parseInput(char *buffer, char *command, char *second, char *third) {
 
 
 void formatMessage(char *message, int code, char *second, char *third) {
-    if (code == LOGIN) sprintf(message, "LOG %s %s\n", second, third);
-    else if (code == REQ) {
-        rid = rand() % 10000;
-        if (1) {
-            sprintf(message, "REQ %s %d %s\n", uid, rid, second);
-        }
-        else sprintf(message, "REQ %s %d %s %s\n", uid, rid, second, third);
-    }
-    else if (code == VAL) sprintf(message, "AUT %s %d %s\n", uid, rid, second);
-
     switch (code) {
         case LOGIN:
             sprintf(message, "LOG %s %s\n", second, third);
