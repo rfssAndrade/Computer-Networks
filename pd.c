@@ -60,7 +60,7 @@ void makeConnection() {
     ssize_t n;
     socklen_t addrlen;
     struct addrinfo hints_as, hints_pd, *res_as, *res_pd;
-    struct sockaddr_in addr;
+    struct sockaddr_in addr_client, addr_server;
     char buffer[MAX_INPUT], command[5], second[6], third[9], answer[128], message[42]; //change answer
     fd_set inputs, testfds;
 
@@ -123,21 +123,21 @@ void makeConnection() {
                     if (n == ERROR) puts("ERROR");//?????
                 }
                 else if (FD_ISSET(fd_client, &testfds)) {
-                    addrlen = sizeof(addr);
-                    n = recvfrom(fd_client, answer, 128, 0, (struct sockaddr *)&addr, &addrlen);
+                    addrlen = sizeof(addr_client);
+                    n = recvfrom(fd_client, answer, 128, 0, (struct sockaddr *)&addr_client, &addrlen);
                     if (n == ERROR) puts("ERROR");//??????
                     
                     verifyAnswer(answer);
                 }
 
                 else if (FD_ISSET(fd_server, &testfds)) {
-                    addrlen = sizeof(addr);
-                    n = recvfrom(fd_server, answer, 128, 0, (struct sockaddr *)&addr, &addrlen);
+                    addrlen = sizeof(addr_server);
+                    n = recvfrom(fd_server, answer, 128, 0, (struct sockaddr *)&addr_server, &addrlen);
                     if (n == ERROR) puts("ERROR");//??????
 
-                    n = verifyAnswer(answer);
+                    //n = verifyAnswer(answer);
                     sprintf(message, "RVC OK\n");
-                    n = sendto(fd_server, message, strlen(message), 0, (struct sockaddr *)&addr, addrlen); //mudar
+                    n = sendto(fd_server, message, strlen(message), 0, (struct sockaddr *)&addr_server, addrlen); //mudar
                     if (n == ERROR) puts("ERROR");
                     // falta para RVC NOK
                 }
