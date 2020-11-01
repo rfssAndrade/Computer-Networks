@@ -155,7 +155,6 @@ int parseInput(char *buffer, char *command, char *second, char *third) {
 
         case REQ:
             if (verifyFop(second, third) != 0) code = ERROR;
-            printf("SWITCH %s %s\n", second, third);
             break;
 
         case VAL:
@@ -182,7 +181,7 @@ void formatMessage(char *message, int code, char *second, char *third) {
 
         case REQ:
             rid = rand() % 10000;
-            if (third == NULL) sprintf(message, "REQ %s %d %s\n", uid, rid, second);
+            if (third == NULL) {sprintf(message, "REQ %s %d %s\n", uid, rid, second); puts("here");}
             else sprintf(message, "REQ %s %d %s %s\n", uid, rid, second, third);
             printf("%s", message);
             break;
