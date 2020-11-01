@@ -71,7 +71,7 @@ void makeConnection() {
     FD_SET(0, &inputs);
     FD_SET(fd, &inputs);
 
-    memset(&hints_as, 0, sizeof hints);
+    memset(&hints_as, 0, sizeof hints_as);
     hints_as.ai_family = AF_INET;
     hints_as.ai_socktype = SOCK_DGRAM;
 
@@ -80,7 +80,7 @@ void makeConnection() {
     errcode = getaddrinfo(ASIP, ASport, &hints_as, &res_as);
     if (errcode != 0) exit(1); // correto?
 
-    memset(&hints_pd, 0, sizeof hints);
+    memset(&hints_pd, 0, sizeof hints_pd);
     hints_pd.ai_family = AF_INET;
     hints_pd.ai_socktype = SOCK_DGRAM;
     hints_pd.ai_flags = AI_PASSIVE;
