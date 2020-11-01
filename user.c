@@ -240,8 +240,8 @@ int verifyAnswer(char *answer) {
     }
     else if (strcmp(answer, "RLO NOK\n") == 0) printf("Log in failed: %s", answer);
     else if (strcmp(answer, "RRQ OK\n") == 0) printf("Request accepted: %s", answer);
-    else if (strcmp(answer, "RLO ERR\n") == 0) printf("ERROR\n");
-    else if (strcmp(answer, "RRQ ERR\n") == 0) printf("ERROR\n");
+    else if (strcmp(answer, "RLO ERR\n") == 0) printf("ERROR 1\n");
+    else if (strcmp(answer, "RRQ ERR\n") == 0) printf("ERROR 2\n");
     else if (strcmp(answer, "RRQ ELOG\n") == 0) printf("Not logged in: %s", answer);
     else if (strcmp(answer, "RRQ EPD\n") == 0) printf("Could not reach PD: %s", answer);
     else if (strcmp(answer, "RRQ EUSER\n") == 0) printf("Wrong UID: %s", answer);
