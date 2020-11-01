@@ -49,7 +49,8 @@ int verifyPass(char *pass) {
 
 
 int verifyFop(char *fop, char *fname) {
-    if (strcmp(fop, "L\n") == 0 || strcmp(fop, "X\n") == 0) {
+    printf("%s", fop);
+    if (strcmp(fop, "L") == 0 || strcmp(fop, "X") == 0) {
         memset(fname, 0, sizeof(fname));
         return 0;
     } //fname needs to be null?
