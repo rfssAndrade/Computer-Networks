@@ -198,7 +198,6 @@ void formatMessage(char *message, int code, char *second, char *third) {
         case VAL:
             sprintf(message, "AUT %s %d %s\n", uid, rid, second);
     }
-    printf("%s", message);
 }
 
 
