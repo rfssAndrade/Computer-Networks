@@ -181,7 +181,7 @@ void formatMessage(char *message, int code, char *second, char *third) {
 
         case REQ:
             rid = rand() % 10000;
-            printf("%s", third);
+            printf("--%s--", third);
             if (third == NULL) {sprintf(message, "REQ %s %d %s\n", uid, rid, second); puts("here");}
             else sprintf(message, "REQ %s %d %s %s\n", uid, rid, second, third);
             printf("%s", message);
