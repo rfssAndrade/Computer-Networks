@@ -27,7 +27,10 @@ int parseInput(char *buffer, char *command, char *second, char *third);
 void formatMessage(char *message, int code, char *second, char *third);
 void sendMessage(int code, int fd_as, int fd_fs, char *message);
 void readMessage(int fd, char *answer);
-int verifyAnswer(char *answer);
+int verifyAnswerAS(char *answer);
+int parseAnswerFS(char *answer, char* command, char *second, char *third);
+int verifyAnswerFS(char *answer);
+int parseAnswerAS(char *answer, char *command, char *second);
 
 
 int main(int argc, char **argv) {
@@ -62,9 +65,6 @@ void makeConnection() {
     fd_as = socket(AF_INET, SOCK_STREAM, 0);
     if (fd_as == -1) exit(1);
 
-    fd_fs = socket(AF_INET, SOCK_STREAM, 0);
-    if (fd_fs == -1) exit(1);
-
     FD_ZERO(&inputs);
     FD_SET(0, &inputs);
     FD_SET(fd_as, &inputs);
@@ -77,13 +77,7 @@ void makeConnection() {
     code = getaddrinfo(ASIP, ASport, &hints, &res_as);
     if (code != 0) exit(1);
 
-    code = getaddrinfo(FSIP, FSport, &hints, &res_fs);
-    if (code != 0) exit(1);
-
     n = connect(fd_as, res_as->ai_addr, res_as->ai_addrlen);
-    if (n == -1) exit(1);
-
-    n = connect(fd_fs, res_fs->ai_addr, res_fs->ai_addrlen);
     if (n == -1) exit(1);
 
     while (1) {
@@ -112,11 +106,30 @@ void makeConnection() {
                 if (code == ERROR || code == EXIT) break;
 
                 formatMessage(message, code, second, third);
+                if (code > 4) {
+
+                    fd_fs = socket(AF_INET, SOCK_STREAM, 0);
+                    if (fd_fs == -1) exit(1);
+                    
+                    n = getaddrinfo(FSIP, FSport, &hints, &res_fs);
+                    if (n != 0) exit(1);
+
+                    n = connect(fd_fs, res_fs->ai_addr, res_fs->ai_addrlen);
+                    if (n == -1) exit(1);
+
+                    FD_SET(fd_fs, &inputs);
+                }
                 sendMessage(code, fd_as, fd_fs, message);
             }
-            else if(FD_ISSET(fd_as, &testfds)) {
+            else if (FD_ISSET(fd_as, &testfds)) {
                 readMessage(fd_as, answer);
-                verifyAnswer(answer);
+                if (verifyAnswerAS(answer) != 0) parseAnswerAS(answer, command, second);
+            }
+            else if (FD_ISSET(fd_fs, &testfds)) {
+                readMessage(fd_fs, answer);
+                if (verifyAnswerFS(answer) != 0) parseAnswerFS(answer, command, second, third);
+                FD_CLR(fd_fs, &inputs);
+                close(fd_fs);
             }
             break;
         }
@@ -126,7 +139,6 @@ void makeConnection() {
     freeaddrinfo(res_as);
     freeaddrinfo(res_fs);
     close(fd_as);
-    close(fd_fs);
 }
 
 int parseInput(char *buffer, char *command, char *second, char *third) {
@@ -221,26 +233,90 @@ void readMessage(int fd, char *answer) {
 }
 
 
-int verifyAnswer(char *answer) {
+int verifyAnswerAS(char *answer) {
     if (strcmp(answer, "RLO OK\n") == 0) {
         isLogged = 1;
         printf("Login successful: %s", answer);
         return 1;
     }
-    else if (strcmp(answer, "RLO NOK\n") == 0) printf("Log in failed: %s", answer);
+    else if (strcmp(answer, "RLO NOK\n") == 0) printf("Wrong password: %s", answer);
+    else if (strcmp(answer, "RLO ERR\n") == 0) printf("User ID doesn't exist: %s", answer);
     else if (strcmp(answer, "RRQ OK\n") == 0) printf("Request accepted: %s", answer);
-    else if (strcmp(answer, "RLO ERR\n") == 0) printf("ERROR 1\n");
-    else if (strcmp(answer, "RRQ ERR\n") == 0) printf("ERROR 2\n");
-    else if (strcmp(answer, "RRQ ELOG\n") == 0) printf("Not logged in: %s", answer);
+    else if (strcmp(answer, "RRQ ELOG\n") == 0) printf("User not logged in: %s", answer);
     else if (strcmp(answer, "RRQ EPD\n") == 0) printf("Could not reach PD: %s", answer);
     else if (strcmp(answer, "RRQ EUSER\n") == 0) printf("Wrong UID: %s", answer);
     else if (strcmp(answer, "RRQ EFOP\n") == 0) printf("Invalid file operation: %s", answer);
-    else if (strcmp(answer, "RAU 0\n") == 0) printf("Two-factor authentication failed: %s", answer);
+    else if (strcmp(answer, "RRQ ERR\n") == 0) printf("Invalid request format: %s", answer);
     else if (strcmp(answer, "ERR\n") == 0) printf("ERROR: %s\n", answer);
-    else if (answer != NULL && strlen(answer) > 3) { // mudar
-        sscanf(answer, "RAU %d", &tid); // verificar se TID é correto?
-        printf("Two-factor authentication successful: %s", answer);
-    }
+    else if (strcmp(answer, "RAU 0\n") == 0) printf("Two-factor authentication failed: %s", answer);
+    else return 1;
 
     return 0;
+}
+
+
+int parseAnswerAS(char *answer, char *command, char *second) {
+    sscanf(answer, "%s %s", command, second);
+
+    if (verifyOperation(command) == RAU && verifyTid(second) == 0) {
+        tid = atoi(second);
+        printf("Two-factor authentication successful: %s", answer);
+        return 0;
+    }
+
+    printf("Invalid message: %s", answer);
+    return ERROR;
+}
+
+
+int verifyAnswerFS(char *answer) {
+    if (strcmp(answer, "RUP OK\n") == 0) printf("Upload request approved: %s", answer);
+    else if (strcmp(answer, "RUP NOK\n") == 0) printf("UID doesn't exist: %s", answer);
+    else if (strcmp(answer, "RUP DUP\n") == 0) printf("File already exists: %s", answer);
+    else if (strcmp(answer, "RUP FULL\n") == 0) printf("Files limit reached: %s", answer);
+    else if (strcmp(answer, "RUP INV\n") == 0) printf("Invalid TID: %s", answer);
+    else if (strcmp(answer, "RUP ERROR\n") == 0) printf("Invalid upload request format: %s", answer);
+    else if (strcmp(answer, "RDL OK\n") == 0) printf("Delete request approved: %s", answer);
+    else if (strcmp(answer, "RDL EOF\n") == 0) printf("File not available: %s", answer);
+    else if (strcmp(answer, "RDL NOK\n") == 0) printf("UID doesn't exist: %s", answer);
+    else if (strcmp(answer, "RDL INV\n") == 0) printf("Invalid TID: %s", answer);
+    else if (strcmp(answer, "RDL ERR\n") == 0) printf("Invalid delete request format: %s", answer);
+    else if (strcmp(answer, "RRM OK\n") == 0) printf("Remove request approved: %s", answer);
+    else if (strcmp(answer, "RRM NOK\n") == 0) printf("UID doesn't exist: %s", answer);
+    else if (strcmp(answer, "RRM INV\n") == 0) printf("Invalid TID: %s", answer);
+    else if (strcmp(answer, "RRM ERR\n") == 0) printf("Invalid remove request format: %s", answer);
+    else if (strcmp(answer, "ERR\n") == 0) printf("ERROR: %s\n", answer);
+    else return 1;
+
+    return 0;
+}
+
+
+int parseAnswerFS(char *answer, char* command, char *second, char *third) {
+    int code;
+
+    sscanf(answer, "%s %s %s", command, second, third);
+
+    code = verifyOperation(command);
+
+    switch (code) {
+        case RLS:
+            
+            break;
+
+        case RRT:
+            if (strcmp(answer, "RRQ OK\n") == 0) printf("Retrieve request approved: %s", answer); // do things with size
+            else if (strcmp(answer, "RRQ EOF\n") == 0) printf("File not available: %s", answer);
+            else if (strcmp(answer, "RRQ NOK\n") == 0) printf("No content available for UID: %s", answer);
+            else if (strcmp(answer, "RRQ INV\n") == 0) printf("Wrong TID: %s", answer);
+            else if (strcmp(answer, "RRQ ERR\n") == 0) printf("Invalid request format: %s", answer);
+            break;
+    
+        default:
+            printf("Invalid message: %s", answer);
+            code = ERROR;
+            break;
+    }
+
+    return ERROR;
 }

@@ -5,12 +5,13 @@
 #define PASS_SIZE 8
 #define UID_SIZE 5
 #define VC_SIZE 4
-#define FILE_SIZE 24
+#define FILE_NAME_SIZE 24
 #define EXTENSION_SIZE 3
 #define PORT_SIZE 5
+#define FILE_SIZE_DIGITS 10
 
 
-//CODES
+//CODES USER INPUT
 #define ERROR -1
 #define REG 1
 #define LOGIN 2
@@ -24,7 +25,15 @@
 #define EXIT 10
 
 
+// CODES PROTOCOLO
+#define RAU 11
+#define RVC 12
+#define RLS 13
+#define RRT 14
+
+
 int verifyCommand(char *command);
+int verifyOperation(char *operation);
 int verifyUid(char *uid);
 int verifyPass(char *pass);
 int verifyFop(char *fop, char *fname);
@@ -33,6 +42,7 @@ int verifyVc(char *vc);
 int verifyPort(char *port);
 int validateNumber(char *str);
 int verifyIp(char *ip);
+int verifyTid(char *tid);
 
 
 #endif

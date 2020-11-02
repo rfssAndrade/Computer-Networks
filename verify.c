@@ -22,6 +22,26 @@ int verifyCommand(char *command) {
 }
 
 
+int verifyOperation(char *operation) {
+    if (strcmp(operation, "REG") == 0) return REG;
+    if (strcmp(operation, "UNR") == 0) return EXIT;
+    if (strcmp(operation, "LOG") == 0) return LOGIN;
+    if (strcmp(operation, "REQ") == 0) return REQ;
+    if (strcmp(operation, "AUT") == 0) return VAL;
+    if (strcmp(operation, "LST") == 0) return LIST;
+    if (strcmp(operation, "RTV") == 0) return RETRIEVE;
+    if (strcmp(operation, "UPL") == 0) return UPLOAD;
+    if (strcmp(operation, "DEL") == 0) return DELETE;
+    if (strcmp(operation, "REM") == 0) return REMOVE;
+    if (strcmp(operation, "RAU") == 0) return RAU;
+    if (strcmp(operation, "RVC") == 0) return RVC;
+    if (strcmp(operation, "RLS") == 0) return RLS;
+    if (strcmp(operation, "RRT") == 0) return RRT;
+
+    return ERROR;
+}
+
+
 int verifyUid(char *uid) {
     if ((strlen(uid) == UID_SIZE && atoi(uid) != 0) || strcmp(uid, "00000") == 0) return 0;
 
@@ -61,7 +81,7 @@ int verifyFname(char *fname) {
     char *temp = fname;
     int extension = 0;
 
-    if (fname == NULL || strlen(fname) > FILE_SIZE) {
+    if (fname == NULL || strlen(fname) > FILE_NAME_SIZE) {
         printf("Invalid filename\n");
         return ERROR;
     }
@@ -143,4 +163,12 @@ int verifyIp(char *ip) {
     if (dots != 3) return ERROR;
 
     return 0;
+}
+
+
+int verifyTid(char *tid) {
+    if (strlen(tid) == 4 && atoi(tid) != 0) return 0;
+
+    printf("Invalid TID\n");
+    return ERROR;
 }

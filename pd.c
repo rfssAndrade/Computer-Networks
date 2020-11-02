@@ -191,7 +191,7 @@ int parseInput(char *buffer, char *command, char *second, char *third) {
 void formatMessage(char *message, int code, char *second, char *third) {
     switch (code) {
         case REG:
-            sprintf(message, "REG %s %s %s %s\n", second, third, PDIP, PDport);
+            sprintf(message, "REG %s %s %s %s\n", second, third, PDIP, PDport); // returns message size
             break;
         case EXIT:
             sprintf(message, "UNR %s %s\n", uid, pass);
@@ -227,23 +227,19 @@ void sendMessageServer(int fd, char *message, struct sockaddr_in addr) {
 
 
 int verifyAnswer(char *answer) {
-    char temp_uid[6], vc[5], fop[2], fname[25]; // verificar fname?
-
     if (strcmp(answer, "RRG OK\n") == 0) {
         isRegistered = 1;
         printf("Registration successful: %s", answer);
         return 1;
     }
-    else if (strcmp(answer, "RRG NOK\n") == 0) printf("Registration failed: %s", answer);
+    else if (strcmp(answer, "RRG NOK\n") == 0) {
+        memset(uid, 0, sizeof(uid));
+        memset(pass, 0, sizeof(pass));
+        printf("Registration failed: %s", answer);
+    }
     else if (strcmp(answer, "RUN OK\n") == 0) printf("Unresgitration successful: %s", answer);
     else if (strcmp(answer, "RUN NOK\n") == 0) printf("Unresgistrtion failed: %s", answer);
-    else if (strcmp(answer, "ERR\n") == 0) printf("ERROR\n");
-    else {
-        printf("%s", answer);
-        sscanf(answer, "VLC %s %s %s %s", temp_uid, vc, fop, fname); // verificar args?
-        printf("VC = %s, %s: %s\n", vc, fop, fname);
-        return 2;
-    }
+    else printf("ERROR: %s", answer);
 
     return 0;
 }
