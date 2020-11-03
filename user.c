@@ -151,9 +151,9 @@ void makeConnection() {
 
 int parseInput(char *buffer, char *command, char *second, char *third) {
     int code;
-
+    printf("PRESSCANF: %s", buffer);
     sscanf(buffer, "%s %s %s", command, second, third);
-    
+    printf("POSSSCANF: %s", buffer);
     code = verifyCommand(command);
     if (code != LOGIN && !isLogged) {
         printf("You aren't logged in\n");
