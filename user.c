@@ -181,7 +181,7 @@ int parseInput(char *buffer, char *command, char *second, char *third) {
         case RETRIEVE:
         case UPLOAD:
         case DELETE:
-            if (verifyFname(second) != 0) code = ERROR;
+            if (verifyFname(second) != 0) {code = ERROR;puts("here");}
             break;
 
         case LIST:
