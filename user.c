@@ -219,11 +219,11 @@ void formatMessage(char *message, int code, char *second, char *third) {
             break;
 
         case LIST:
-            sprintf(message, "LST %s %s\n", uid, tid);
+            sprintf(message, "LST %s %04d\n", uid, tid);
             break;
 
         case RETRIEVE:
-            sprintf(message, "RTV %s %s %s\n", uid, tid, third);
+            sprintf(message, "RTV %s %04d %s\n", uid, tid, third);
             break;
         
         case UPLOAD:
@@ -231,11 +231,11 @@ void formatMessage(char *message, int code, char *second, char *third) {
             break;
 
         case DELETE:
-            sprintf(message, "DEL %s %s %s\n", uid, tid, third);
+            sprintf(message, "DEL %s %04d %s\n", uid, tid, third);
             break;
 
         case REMOVE:
-            sprintf(message, "REM %s %s\n", uid, tid);
+            sprintf(message, "REM %s %04d\n", uid, tid);
             break;
     }
 }
@@ -296,7 +296,7 @@ int parseAnswerAS(char *answer, char *command, char *second) {
     sscanf(answer, "%s %s", command, second);
 
     if (verifyOperation(command) == RAU && verifyTid(second) == 0) {
-        strcpy(tid, second);
+        tid = atoi(second);
         printf("Two-factor authentication successful: %s", answer);
         return 0;
     }
