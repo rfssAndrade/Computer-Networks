@@ -139,7 +139,7 @@ void makeConnection() {
             break;
         }
         if (code == EXIT) break;
-        else printf("Invalid command\n");
+        else if (code == ERROR) printf("Invalid command\n");
     }
 
     freeaddrinfo(res_as);
@@ -218,7 +218,7 @@ void formatMessage(char *message, int code, char *second, char *third) {
             break;
 
         case LIST:
-            sprintf(message, "LST %s %d\n", uid, tid);
+            sprintf(message, "LST %s %s\n", uid, tid);
             break;
 
         case RETRIEVE:
@@ -296,7 +296,6 @@ int parseAnswerAS(char *answer, char *command, char *second) {
 
     if (verifyOperation(command) == RAU && verifyTid(second) == 0) {
         tid = second;
-        printf("%s ----", tid);
         printf("Two-factor authentication successful: %s", answer);
         return 0;
     }
