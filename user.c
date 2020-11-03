@@ -121,11 +121,9 @@ void makeConnection() {
                     FD_SET(fd_fs, &inputs);
                 }
                 sendMessage(code, fd_as, fd_fs, message);
-                printf("SENT: %s", message);
             }
             else if (FD_ISSET(fd_as, &testfds)) {
                 readMessage(fd_as, answer);
-                printf("RECEIVED AS: %s");
                 if (verifyAnswerAS(answer) != 0) parseAnswerAS(answer, command, second);
             }
             else if (fd_fs != -1 && FD_ISSET(fd_fs, &testfds)) {
@@ -346,6 +344,7 @@ int parseAnswerFS(char *answer, char* command, char *second, char *third) {
             else if (strcmp(answer, "RRT NOK\n") == 0) printf("No content available for UID: %s", answer);
             else if (strcmp(answer, "RRT INV\n") == 0) printf("Wrong TID: %s", answer);
             else if (strcmp(answer, "RRT ERR\n") == 0) printf("Invalid request format: %s", answer);
+            printf("%s", answer);
             break;
     
         default:
