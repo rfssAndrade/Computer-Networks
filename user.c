@@ -353,5 +353,7 @@ int parseAnswerFS(char *answer, char* command, char *second, char *third) {
             break;
     }
 
+    printf("%s", answer);
+
     return ERROR;
 }
