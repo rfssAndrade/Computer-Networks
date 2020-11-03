@@ -53,7 +53,7 @@ void parseArgs(int argc, char **argv) {
 }
 
 void makeConnection() {
-    int fd_as, fd_fs, code, out_fds;
+    int fd_as, fd_fs = -1, code, out_fds;
     ssize_t n;
     socklen_t addrlen;
     struct addrinfo hints, *res_as, *res_fs;
@@ -76,6 +76,9 @@ void makeConnection() {
     
     code = getaddrinfo(ASIP, ASport, &hints, &res_as);
     if (code != 0) exit(1);
+
+    n = getaddrinfo(FSIP, FSport, &hints, &res_fs);
+    if (n != 0) exit(1);
 
     n = connect(fd_as, res_as->ai_addr, res_as->ai_addrlen);
     if (n == -1) exit(1);
@@ -110,9 +113,6 @@ void makeConnection() {
 
                     fd_fs = socket(AF_INET, SOCK_STREAM, 0);
                     if (fd_fs == -1) exit(1);
-                    
-                    n = getaddrinfo(FSIP, FSport, &hints, &res_fs);
-                    if (n != 0) exit(1);
 
                     n = connect(fd_fs, res_fs->ai_addr, res_fs->ai_addrlen);
                     if (n == -1) exit(1);
@@ -120,16 +120,20 @@ void makeConnection() {
                     FD_SET(fd_fs, &inputs);
                 }
                 sendMessage(code, fd_as, fd_fs, message);
+                printf("SENT: %s", message);
             }
             else if (FD_ISSET(fd_as, &testfds)) {
                 readMessage(fd_as, answer);
+                printf("RECEIVED AS: %s");
                 if (verifyAnswerAS(answer) != 0) parseAnswerAS(answer, command, second);
             }
-            else if (FD_ISSET(fd_fs, &testfds)) {
+            else if (fd_fs != -1 && FD_ISSET(fd_fs, &testfds)) {
                 readMessage(fd_fs, answer);
+                printf("RECEIVED FS: %s", answer);
                 if (verifyAnswerFS(answer) != 0) parseAnswerFS(answer, command, second, third);
                 FD_CLR(fd_fs, &inputs);
-                close(fd_fs);
+                close(fd_fs); //verify?
+                fd_fs = -1;
             }
             break;
         }
@@ -237,7 +241,6 @@ int verifyAnswerAS(char *answer) {
     if (strcmp(answer, "RLO OK\n") == 0) {
         isLogged = 1;
         printf("Login successful: %s", answer);
-        return 1;
     }
     else if (strcmp(answer, "RLO NOK\n") == 0) printf("Wrong password: %s", answer);
     else if (strcmp(answer, "RLO ERR\n") == 0) printf("User ID doesn't exist: %s", answer);
@@ -301,15 +304,15 @@ int parseAnswerFS(char *answer, char* command, char *second, char *third) {
 
     switch (code) {
         case RLS:
-            
+            printf("%s", answer);
             break;
 
         case RRT:
-            if (strcmp(answer, "RRQ OK\n") == 0) printf("Retrieve request approved: %s", answer); // do things with size
-            else if (strcmp(answer, "RRQ EOF\n") == 0) printf("File not available: %s", answer);
-            else if (strcmp(answer, "RRQ NOK\n") == 0) printf("No content available for UID: %s", answer);
-            else if (strcmp(answer, "RRQ INV\n") == 0) printf("Wrong TID: %s", answer);
-            else if (strcmp(answer, "RRQ ERR\n") == 0) printf("Invalid request format: %s", answer);
+            if (strcmp(answer, "RRT OK\n") == 0) printf("Retrieve request approved: %s", answer); // do things with size
+            else if (strcmp(answer, "RRT EOF\n") == 0) printf("File not available: %s", answer);
+            else if (strcmp(answer, "RRT NOK\n") == 0) printf("No content available for UID: %s", answer);
+            else if (strcmp(answer, "RRT INV\n") == 0) printf("Wrong TID: %s", answer);
+            else if (strcmp(answer, "RRT ERR\n") == 0) printf("Invalid request format: %s", answer);
             break;
     
         default:
