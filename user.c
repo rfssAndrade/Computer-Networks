@@ -19,7 +19,7 @@ int isLogged = 0;
 char *uid = NULL;
 char *pass = NULL;
 int rid = -1;
-int tid = -1;
+char *tid = NULL;
 
 void parseArgs(int argc, char **argv);
 void makeConnection();
@@ -37,9 +37,11 @@ int main(int argc, char **argv) {
     parseArgs(argc, argv);
     uid = malloc(5 * sizeof(char));
     pass = malloc(9 * sizeof(char));
+    tid = malloc(5 * sizeof(char));
     makeConnection();
     free(uid);
     free(pass);
+    free(tid);
 
     return 0;
 }
@@ -68,7 +70,6 @@ void makeConnection() {
     FD_ZERO(&inputs);
     FD_SET(0, &inputs);
     FD_SET(fd_as, &inputs);
-    FD_SET(fd_fs, &inputs);
 
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_INET;
@@ -138,6 +139,7 @@ void makeConnection() {
             break;
         }
         if (code == EXIT) break;
+        else printf("Invalid command\n");
     }
 
     freeaddrinfo(res_as);
@@ -177,6 +179,16 @@ int parseInput(char *buffer, char *command, char *second, char *third) {
             if (verifyVc(second) != 0) code = ERROR;
             break;
 
+        case RETRIEVE:
+        case UPLOAD:
+        case DELETE:
+            if (verifyFname(second) != 0) code = ERROR;
+            break;
+
+        case LIST:
+        case REMOVE:
+            break;
+
         case EXIT:
             break;
     
@@ -203,6 +215,27 @@ void formatMessage(char *message, int code, char *second, char *third) {
 
         case VAL:
             sprintf(message, "AUT %s %d %s\n", uid, rid, second);
+            break;
+
+        case LIST:
+            sprintf(message, "LST %s %d\n", uid, tid);
+            break;
+
+        case RETRIEVE:
+            sprintf(message, "RTV %s %s %s\n", uid, tid, third);
+            break;
+        
+        case UPLOAD:
+            puts("TO DO");
+            break;
+
+        case DELETE:
+            sprintf(message, "DEL %s %s %s\n", uid, tid, third);
+            break;
+
+        case REMOVE:
+            sprintf(message, "REM %s %s\n", uid, tid);
+            break;
     }
 }
 
@@ -262,7 +295,8 @@ int parseAnswerAS(char *answer, char *command, char *second) {
     sscanf(answer, "%s %s", command, second);
 
     if (verifyOperation(command) == RAU && verifyTid(second) == 0) {
-        tid = atoi(second);
+        tid = second;
+        printf("%s ----", tid);
         printf("Two-factor authentication successful: %s", answer);
         return 0;
     }
