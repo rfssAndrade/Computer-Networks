@@ -295,7 +295,7 @@ int parseAnswerAS(char *answer, char *command, char *second) {
     sscanf(answer, "%s %s", command, second);
 
     if (verifyOperation(command) == RAU && verifyTid(second) == 0) {
-        tid = second;
+        strcpy(tid, second);
         printf("Two-factor authentication successful: %s", answer);
         return 0;
     }
