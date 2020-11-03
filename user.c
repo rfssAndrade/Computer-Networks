@@ -18,6 +18,7 @@ char *FSport = NULL;
 int isLogged = 0;
 char *uid = NULL;
 char *pass = NULL;
+char *fname = NULL;
 int rid = -1;
 int tid = -1;
 
@@ -37,6 +38,7 @@ int main(int argc, char **argv) {
     parseArgs(argc, argv);
     uid = malloc(5 * sizeof(char));
     pass = malloc(9 * sizeof(char));
+    fname = malloc(25 * sizeof(char));
     makeConnection();
     free(uid);
     free(pass);
@@ -135,6 +137,7 @@ void makeConnection() {
                 FD_CLR(fd_fs, &inputs);
                 close(fd_fs); //verify?
                 fd_fs = -1;
+                memset(fname, 0, sizeof(fname));
             }
             break;
         }
@@ -182,6 +185,7 @@ int parseInput(char *buffer, char *command, char *second, char *third) {
         case UPLOAD:
         case DELETE:
             if (verifyFname(second) != 0) code = ERROR;
+            else strcpy(fname, second);
             break;
 
         case LIST:
@@ -221,7 +225,7 @@ void formatMessage(char *message, int code, char *second, char *third) {
             break;
 
         case RETRIEVE:
-            sprintf(message, "RTV %s %04d %s\n", uid, tid, third);
+            sprintf(message, "RTV %s %04d %s\n", uid, tid, fname);
             break;
         
         case UPLOAD:
