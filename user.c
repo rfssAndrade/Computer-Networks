@@ -121,6 +121,7 @@ void makeConnection() {
                     FD_SET(fd_fs, &inputs);
                 }
                 sendMessage(code, fd_as, fd_fs, message);
+                printf("SENT: %s", message);
             }
             else if (FD_ISSET(fd_as, &testfds)) {
                 readMessage(fd_as, answer);
