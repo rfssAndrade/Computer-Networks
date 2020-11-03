@@ -60,7 +60,7 @@ void makeConnection() {
     socklen_t addrlen;
     struct addrinfo hints, *res_as, *res_fs;
     struct sockaddr_in addr;
-    char buffer[1280]; // verificar tamanho
+    char buffer[128]; // verificar tamanho
     char command[9], second[6], third[25], answer[128], message[128]; // verificar tamanhos, preciso mallocs?
     fd_set inputs, testfds;
 
@@ -159,7 +159,6 @@ int parseInput(char *buffer, char *command, char *second, char *third) {
         printf("You aren't logged in\n");
         return ERROR;
     }
-    printf("CODE BEGIN: %d\n", code);
     switch (code) {
         case LOGIN:
             if (isLogged) {
