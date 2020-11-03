@@ -209,8 +209,8 @@ void formatMessage(char *message, int code, char *second, char *third) {
 
         case REQ:
             rid = rand() % 10000;
-            if (strlen(third) == 0) sprintf(message, "REQ %s %d %s\n", uid, rid, second);
-            else sprintf(message, "REQ %s %d %s %s\n", uid, rid, second, third);
+            if (strlen(third) == 0) sprintf(message, "REQ %s %04d %s\n", uid, rid, second);
+            else sprintf(message, "REQ %s %04d %s %s\n", uid, rid, second, third);
             break;
 
         case VAL:
@@ -248,7 +248,7 @@ void sendMessage(int code, int fd_as, int fd_fs, char *message) {
 
     while (nleft > 0) {
         nwritten = write(fd, ptr, nleft);
-        if (nwritten <= 0) exit(1); //?????
+        if (nwritten <= 0) puts("ERROR ON SEND"); //?????
         nleft -= nwritten;
         ptr += nwritten;
     }
@@ -261,7 +261,7 @@ void readMessage(int fd, char *answer) {
      // um bocado martelado ver melhor
     while (*ptr != '\n') { // se o servidor não cumprir o protocolo isto não vai funcionar
         nread = read(fd, ptr, 127); //change size
-        if (nread == -1) exit(1);
+        if (nread == -1) puts("ERROR ON READ");
         else if(nread == 0) break; // o que fazer aqui
         ptr += nread;
         if (*(ptr-1) == '\n') break;
