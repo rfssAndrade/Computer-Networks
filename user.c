@@ -108,6 +108,7 @@ void makeConnection() {
                 fgets(buffer, 128, stdin);
                 printf("DEPOIS: %s\n", buffer);
                 code = parseInput(buffer, command, second, third);
+                printf("DEPOIS2: %s", buffer);
 
                 if (code == ERROR || code == EXIT) break;
 
