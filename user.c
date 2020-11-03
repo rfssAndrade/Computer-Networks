@@ -19,7 +19,7 @@ int isLogged = 0;
 char *uid = NULL;
 char *pass = NULL;
 int rid = -1;
-char *tid = NULL;
+int tid = -1;
 
 void parseArgs(int argc, char **argv);
 void makeConnection();
@@ -37,11 +37,9 @@ int main(int argc, char **argv) {
     parseArgs(argc, argv);
     uid = malloc(5 * sizeof(char));
     pass = malloc(9 * sizeof(char));
-    tid = malloc(5 * sizeof(char));
     makeConnection();
     free(uid);
     free(pass);
-    free(tid);
 
     return 0;
 }
