@@ -104,7 +104,9 @@ void makeConnection() {
             memset(third, 0, sizeof(third));
 
             if (FD_ISSET(0, &testfds)) {
+                printf("ANTES: %s\n", buffer);
                 fgets(buffer, 128, stdin);
+                printf("DEPOIS: %s\n", buffer);
                 code = parseInput(buffer, command, second, third);
 
                 if (code == ERROR || code == EXIT) break;
@@ -156,7 +158,7 @@ int parseInput(char *buffer, char *command, char *second, char *third) {
         printf("You aren't logged in\n");
         return ERROR;
     }
-
+    printf("CODE BEGIN: %d\n", code);
     switch (code) {
         case LOGIN:
             if (isLogged) {
@@ -181,7 +183,7 @@ int parseInput(char *buffer, char *command, char *second, char *third) {
         case RETRIEVE:
         case UPLOAD:
         case DELETE:
-            if (verifyFname(second) != 0) {code = ERROR;puts("here");}
+            if (verifyFname(second) != 0) code = ERROR;
             break;
 
         case LIST:
@@ -195,7 +197,7 @@ int parseInput(char *buffer, char *command, char *second, char *third) {
             code = ERROR;
             break;
     }
-
+    
     return code;
 }
 
