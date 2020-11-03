@@ -61,7 +61,7 @@ void makeConnection() {
     struct addrinfo hints, *res_as, *res_fs;
     struct sockaddr_in addr;
     char buffer[128]; // verificar tamanho
-    char command[9], second[6], third[25], answer[128], message[128]; // verificar tamanhos, preciso mallocs?
+    char command[128], second[128], third[128], answer[128], message[128]; // verificar tamanhos, preciso mallocs?
     fd_set inputs, testfds;
 
     fd_as = socket(AF_INET, SOCK_STREAM, 0);
