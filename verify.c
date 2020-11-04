@@ -5,6 +5,18 @@
 #include "verify.h"
 
 
+int verifyArg(char *flag, char *arg) {
+    if (strcmp(flag, "-d") == 0 && verifyPort(arg) == 0) return D;
+    if (strcmp(flag, "-n") == 0 && verifyIp(arg) == 0) return N;
+    if (strcmp(flag, "-p") == 0 && verifyPort(arg) == 0) return P;
+    if (strcmp(flag, "-m") == 0 && verifyIp(arg) == 0) return M;
+    if (strcmp(flag, "-q") == 0 && verifyPort(arg) == 0) return Q;
+    if (strcmp(flag, "-v") == 0) return V;
+
+    return ERROR;
+}
+
+
 int verifyCommand(char *command) {
     if (strcmp(command, "reg") == 0) return REG;
     if (strcmp(command, "login") == 0) return LOGIN;
@@ -37,6 +49,7 @@ int verifyOperation(char *operation) {
     if (strcmp(operation, "RVC") == 0) return RVC;
     if (strcmp(operation, "RLS") == 0) return RLS;
     if (strcmp(operation, "RRT") == 0) return RRT;
+    if (strcmp(operation, "VLC") == 0) return VLC;
 
     return ERROR;
 }

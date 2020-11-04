@@ -1,13 +1,9 @@
 #include <unistd.h>
 #include <stdlib.h>
-#include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <netdb.h>
 #include <string.h>
 #include <stdio.h>
-#include <time.h>
 #include "verify.h"
 
 
@@ -22,6 +18,7 @@ char *fname = NULL;
 int rid = -1;
 int tid = -1;
 
+
 void parseArgs(int argc, char **argv);
 void makeConnection();
 int parseInput(char *buffer, char *command, char *second, char *third);
@@ -35,24 +32,66 @@ int parseAnswerAS(char *answer, char *command, char *second);
 
 
 int main(int argc, char **argv) {
+    FSIP = malloc(16 * sizeof(char));
+    FSport = malloc(6 * sizeof(char));
+    ASIP = malloc(16 * sizeof(char));
+    ASport = malloc(6 * sizeof(char));
+
     parseArgs(argc, argv);
+
     uid = malloc(5 * sizeof(char));
     pass = malloc(9 * sizeof(char));
     fname = malloc(25 * sizeof(char));
+
     makeConnection();
+
+    free(ASIP);
+    free(ASport);
+    free(FSport);
+    free(FSIP);
+    free(fname);
     free(uid);
     free(pass);
 
     return 0;
 }
 
+
 void parseArgs(int argc, char **argv) {
-    //verificar???
-    ASIP = argv[1];
-    ASport = argv[2];
-    FSIP = argv[3];
-    FSport = argv[4];
+    int i = 1, code;
+
+    while(i < argc) {
+        code = verifyArg(argv[i], argv[i+1]);
+        switch (code) {
+            case M:
+                strcpy(FSIP, argv[i+1]);
+                break;
+            case Q:
+                strcpy(FSport, argv[i+1]);
+                break;
+            case N:
+                strcpy(ASIP, argv[i+1]);
+                break;
+            case P:
+                strcpy(ASport, argv[i+1]);
+                break;
+            default:
+                printf("Bad argument\n");
+                exit(1);
+                break;
+        }
+        i += 2;
+    }
+
+    if (strlen(FSIP) == 0) strcpy(FSIP, "127.0.0.1");
+    if (strlen(FSport) == 0) strcpy(FSport, "59034");
+    if (strlen(ASIP) == 0) strcpy(ASIP, "127.0.0.1");
+    if (strlen(ASport) == 0) strcpy(ASport, "58034");
+
+    printf("%s %s %s %s", FSIP, FSport, ASIP, ASport);
+    exit(0);
 }
+
 
 void makeConnection() {
     int fd_as, fd_fs = -1, code, out_fds;
@@ -104,11 +143,9 @@ void makeConnection() {
             memset(third, 0, sizeof(third));
 
             if (FD_ISSET(0, &testfds)) {
-                printf("ANTES: %s\n", buffer);
                 fgets(buffer, 128, stdin);
-                printf("DEPOIS: %s\n", buffer);
+
                 code = parseInput(buffer, command, second, third);
-                printf("DEPOIS2: %s", buffer);
 
                 if (code == ERROR || code == EXIT) break;
 
@@ -152,9 +189,9 @@ void makeConnection() {
 
 int parseInput(char *buffer, char *command, char *second, char *third) {
     int code;
-    printf("PRESSCANF: %s", buffer);
+
     sscanf(buffer, "%s %s %s", command, second, third);
-    printf("POSSSCANF: %s", buffer);
+
     code = verifyCommand(command);
     if (code != LOGIN && !isLogged) {
         printf("You aren't logged in\n");
@@ -357,8 +394,6 @@ int parseAnswerFS(char *answer, char* command, char *second, char *third) {
             code = ERROR;
             break;
     }
-
-    printf("%s", answer);
 
     return ERROR;
 }

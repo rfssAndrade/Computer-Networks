@@ -1,21 +1,11 @@
 #include <unistd.h>
 #include <stdlib.h>
-#include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <netdb.h>
 #include <string.h>
 #include <stdio.h>
-#include <time.h>
 #include "verify.h"
 
-
-#define MAX_INPUT 20
-
-
-// falta fazer se não houver args na linha de comandos
-// falta verificar args linha de comandos
 // falta se RG NOK tem que dar para registar outro
 
 
@@ -39,10 +29,20 @@ void sendMessageServer(int fd, char *message, struct sockaddr_in addr);
 
 
 int main(int argc, char **argv) {
+    PDport = malloc(6 * sizeof(char));
+    ASIP = malloc(16 * sizeof(char));
+    ASport = malloc(6 * sizeof(char));
+
     parseArgs(argc, argv);
+
     uid = malloc(6 * sizeof(char));
     pass = malloc(9 * sizeof(char));
+
     makeConnection();
+
+    free(ASIP);
+    free(ASport);
+    free(PDport);
     free(uid);
     free(pass);
 
@@ -51,21 +51,46 @@ int main(int argc, char **argv) {
 
 
 void parseArgs(int argc, char **argv) {
-    //verificar???
+    int i = 2, code;
     PDIP = argv[1];
-    PDport = argv[2];
-    ASIP = argv[3];
-    ASport = argv[4];
+    if (verifyIp(PDIP) != 0) {
+        printf("Invalid PDIP address: %s\n", PDIP);
+        exit(1);
+    }
+
+    while(i < argc) {
+        code = verifyArg(argv[i], argv[i+1]);
+        switch (code) {
+            case D:
+                strcpy(PDport, argv[i+1]);
+                break;
+            case N:
+                strcpy(ASIP, argv[i+1]);
+                break;
+            case P:
+                strcpy(ASport, argv[i+1]);
+                break;
+            default:
+                printf("Bad argument\n");
+                exit(1);
+                break;
+        }
+        i += 2;
+    }
+
+    if (PDport == NULL) strcpy(PDport, "57034");
+    if (ASIP == NULL) strcpy(ASIP, "127.0.0.1");
+    if (ASport == NULL) strcpy(ASport, "58034");
 }
 
 
 void makeConnection() {
-    int fd_client, fd_server, errcode = 0, out_fds;
+    int fd_client, fd_server, code = 0, out_fds;
     ssize_t n;
     socklen_t addrlen;
     struct addrinfo hints_as, hints_pd, *res_as, *res_pd;
     struct sockaddr_in addr_client, addr_server;
-    char buffer[MAX_INPUT], command[5], second[6], third[9], answer[128], message[42]; //change answer
+    char buffer[128], command[5], second[6], third[9], answer[128], message[42]; //change answer
     fd_set inputs, testfds;
 
     fd_client = socket(AF_INET, SOCK_DGRAM, 0);
@@ -83,16 +108,16 @@ void makeConnection() {
     hints_as.ai_family = AF_INET;
     hints_as.ai_socktype = SOCK_DGRAM;
 
-    errcode = getaddrinfo(ASIP, ASport, &hints_as, &res_as);
-    if (errcode != 0) exit(1); // correto?
+    code = getaddrinfo(ASIP, ASport, &hints_as, &res_as);
+    if (code != 0) exit(1); // correto?
 
     memset(&hints_pd, 0, sizeof hints_pd);
     hints_pd.ai_family = AF_INET;
     hints_pd.ai_socktype = SOCK_DGRAM;
     hints_pd.ai_flags = AI_PASSIVE;
 
-    errcode = getaddrinfo(PDIP, PDport, &hints_pd, &res_pd);
-    if (errcode != 0) exit(1);
+    code = getaddrinfo(PDIP, PDport, &hints_pd, &res_pd);
+    if (code != 0) exit(1);
 
     while (bind(fd_server,res_pd->ai_addr,res_pd->ai_addrlen) ==  -1) puts("Can't bind");
         
@@ -115,18 +140,15 @@ void makeConnection() {
                 memset(third, 0, sizeof(third));
 
                 if (FD_ISSET(0, &testfds)) {
-                    fgets(buffer, MAX_INPUT, stdin); // se a pass for maior (password1) ele não vai ler o 1 e vai ter sucesso ao mandar para o server. Correto?
-                    errcode = parseInput(buffer, command, second, third);
+                    fgets(buffer, 128, stdin); // se a pass for maior (password1) ele não vai ler o 1 e vai ter sucesso ao mandar para o server. Correto?
+                    code = parseInput(buffer, command, second, third);
 
-                    if (errcode == ERROR || (errcode == EXIT && !isRegistered)) break;
+                    if (code == ERROR || (code == EXIT && !isRegistered)) break;
 
-                    formatMessage(message, errcode, second, third);
+                    formatMessage(message, code, second, third);
                     sendMessageClient(fd_client, message, res_as);
                 }
                 else if (FD_ISSET(fd_client, &testfds)) {
-                    // addrlen = sizeof(addr_client);
-                    // n = recvfrom(fd_client, answer, 128, 0, (struct sockaddr *)&addr_client, &addrlen);
-                    // if (n == ERROR) puts("ERROR");//??????
                     readMessageClient(fd_client, answer, addr_client);
                     verifyAnswer(answer);
                 }
@@ -136,16 +158,22 @@ void makeConnection() {
                     if (n == ERROR) puts("ERROR");//??????
                     //readMessageClient(fd_server, answer, addr_server);
                     //n = verifyAnswer(answer);
-                    printf("%s", answer);
-                    sprintf(message, "RVC %s OK\n", uid);
+                    sscanf(answer, "%s %s", command, second);
+                    if (verifyOperation(command) == VLC && strcmp(uid, second) == 0) {
+                        sprintf(message, "RVC %s OK\n", uid);
+                        printf("%s", answer);
+                    }
+                    else {
+                        sprintf(message, "RVC %s NOK\n", uid);
+                        printf("Bad message: %s\n", answer);
+                    }
                     //sendMessageServer(fd_server, message, addr_server);
                     n = sendto(fd_server, message, strlen(message), 0, (struct sockaddr *)&addr_server, addrlen); //mudar
                     if (n == ERROR) puts("ERROR");
-                    // falta para RVC NOK
                 }
                 break;
         }
-        if (errcode == EXIT) break;
+        if (code == EXIT) break;
     }
 
     freeaddrinfo(res_as);

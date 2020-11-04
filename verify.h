@@ -30,8 +30,19 @@
 #define RVC 12
 #define RLS 13
 #define RRT 14
+#define VLC 15
 
 
+// CODES COMMAND LINE
+#define D 1
+#define N 2
+#define P 3
+#define M 4
+#define Q 5
+#define V 6
+
+
+int verifyArg(char *flag, char *arg);
 int verifyCommand(char *command);
 int verifyOperation(char *operation);
 int verifyUid(char *uid);
