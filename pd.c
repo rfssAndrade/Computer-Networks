@@ -76,9 +76,9 @@ void parseArgs(int argc, char **argv) {
         i += 2;
     }
 
-    if (PDport == NULL) strcpy(PDport, "57034");
-    if (ASIP == NULL) strcpy(ASIP, "127.0.0.1");
-    if (ASport == NULL) strcpy(ASport, "58034");
+    if (strlen(PDport) == 0) strcpy(PDport, "57034");
+    if (strlen(ASIP) == 0) strcpy(ASIP, "127.0.0.1");
+    if (strlen(ASport) == 0) strcpy(ASport, "58034");
 }
 
 

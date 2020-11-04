@@ -87,9 +87,6 @@ void parseArgs(int argc, char **argv) {
     if (strlen(FSport) == 0) strcpy(FSport, "59034");
     if (strlen(ASIP) == 0) strcpy(ASIP, "127.0.0.1");
     if (strlen(ASport) == 0) strcpy(ASport, "58034");
-
-    printf("%s %s %s %s", FSIP, FSport, ASIP, ASport);
-    exit(0);
 }
 
 
