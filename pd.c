@@ -6,8 +6,6 @@
 #include <stdio.h>
 #include "verify.h"
 
-// falta se RG NOK tem que dar para registar outro
-
 
 char *PDIP = NULL;
 char *PDport = NULL;
