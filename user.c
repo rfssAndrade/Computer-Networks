@@ -176,7 +176,6 @@ void makeConnection() {
             break;
         }
         if (code == EXIT) break;
-        else if (code == ERROR) printf("Invalid command\n");
     }
 
     freeaddrinfo(res_as);
@@ -230,6 +229,7 @@ int parseInput(char *buffer, char *command, char *second, char *third) {
             break;
     
         default:
+            printf("Invalid command\n");
             code = ERROR;
             break;
     }
@@ -299,7 +299,10 @@ void readMessage(int fd, char *answer) {
     while (*ptr != '\n') { // se o servidor não cumprir o protocolo isto não vai funcionar
         nread = read(fd, ptr, 127); //change size
         if (nread == -1) puts("ERROR ON READ");
-        else if(nread == 0) break; // o que fazer aqui
+        else if(nread == 0) {
+            printf("Server closed socket\n");
+            exit(1);
+        }
         ptr += nread;
         if (*(ptr-1) == '\n') break;
     }
