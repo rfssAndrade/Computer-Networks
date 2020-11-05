@@ -421,7 +421,7 @@ int parseAnswerFS(char *operation, int code, int fd) {
                         printf("Server closed socket\n");
                         return SOCKET_ERROR;
                     }
-                    if (*ptr != ' ' || *ptr!= '\n') ptr++;
+                    if (*ptr != ' ' && *ptr!= '\n') ptr++;
                     else if (strlen(buffer) > 1) spacesRead++;
 
                     if (spacesRead == 2) {
