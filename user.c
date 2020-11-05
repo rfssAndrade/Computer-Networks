@@ -484,7 +484,6 @@ int parseAnswerFS(char *operation, int code, int fd) {
                         printf("Server closed socket\n");
                         return SOCKET_ERROR;
                     }
-                    ptr++;
                 }
                 fSize = atoi(buffer);
                 if (fSize == 0 || fSize > 999999999) printf("Invalid fSize: %d\n", fSize);
