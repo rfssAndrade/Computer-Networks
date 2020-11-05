@@ -425,7 +425,7 @@ int parseAnswerFS(char *operation, int code, int fd) {
                     else if (strlen(buffer) > 1) spacesRead++;
 
                     if (spacesRead == 2) {
-                        *(ptr-1) = '\0';
+                        *ptr = '\0';
                         printf("%d - %s\n", i, buffer);
                         i++;
                         spacesRead = 0;
