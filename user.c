@@ -308,6 +308,8 @@ int readMessageFS(int fd) {
 
     code = verifyOperation(operation);
     if (code == RLS || code == RRT) parseAnswerFS(operation, code, fd);
+
+    return 0;
 }
 
 
@@ -398,19 +400,21 @@ int verifyAnswerFS(char *answer) {
 int parseAnswerFS(char *operation, int code, int fd) {
     char status[4], buffer[128];
     char *ptr = status;
-    int nread = 0, nFiles, spacesRead = 0, i = 1;
+    int nread = 0, nFiles, spacesRead = 0, i = 1, fSize;
+    FILE *fptr;
+
+    while (nread != 3) {    // reads status
+        nread = read(fd, ptr, 3);
+        if (nread == -1) puts("ERROR ON READ");
+        else if (nread == 0) {
+            printf("Server closed socket\n");
+            return SOCKET_ERROR;
+        }
+        ptr += nread;
+    }
 
     switch (code) {
         case RLS:
-            while (nread != 3) {
-                nread = read(fd, ptr, 3);
-                if (nread == -1) puts("ERROR ON READ");
-                else if (nread == 0) {
-                    printf("Server closed socket\n");
-                    return SOCKET_ERROR;
-                }
-                ptr += nread;
-            }
             nFiles = atoi(status);
             if (nFiles > 0) {
                 if (nFiles > 9) {
@@ -431,8 +435,6 @@ int parseAnswerFS(char *operation, int code, int fd) {
                         printf("Server closed socket\n");
                         return SOCKET_ERROR;
                     }
-                    //if (*ptr != ' ' && *ptr!= '\n') ptr++;
-                    //else if (strlen(buffer) > 1) spacesRead++;
                     if (*ptr == ' ' || *ptr == '\n') spacesRead++;
                     ptr++;
 
@@ -464,12 +466,62 @@ int parseAnswerFS(char *operation, int code, int fd) {
             break;
 
         case RRT:
-            //if (strcmp(answer, "RRT OK\n") == 0) printf("Retrieve request approved: %s", answer); // do things with size
-            //printf("%s", answer);
+            if (strcmp(status, " OK") == 0) {
+                nread = 0;
+                while (nread != 1) {
+                    nread = read(fd, ptr, 1);
+                    if (nread == -1) puts("ERROR ON READ");
+                    else if (nread == 0) {
+                        printf("Server closed socket\n");
+                        return SOCKET_ERROR;
+                    }
+                }
+                ptr = buffer;
+                while (*ptr != ' ') {
+                    nread = read(fd, ptr, 1);
+                    if (nread == -1) puts("ERROR ON READ");
+                    else if (nread == 0) {
+                        printf("Server closed socket\n");
+                        return SOCKET_ERROR;
+                    }
+                    ptr++;
+                }
+                fSize = atoi(buffer);
+                if (fSize == 0 || fSize > 999999999) printf("Invalid fSize: %d\n", fSize);
+                else {
+                    ptr = buffer;
+                    fptr = fopen(fname, "w");
+                    while (fSize > 0) {
+                        nread = read(fd, ptr, 127);
+                        if (nread == -1) puts("ERROR ON READ");
+                        else if (nread == 0) {
+                            printf("Server closed socket\n");
+                            return SOCKET_ERROR;
+                        }
+                        fwrite(buffer, sizeof(char), nread, fptr);
+                        ptr = buffer;
+                        fSize -= nread;
+                    }
+                }
+                
+            }
+            else {
+                nread = 0;
+                while (nread != 2) {
+                    nread = read(fd, ptr, 2);
+                    if (nread == -1) puts("ERROR ON READ");
+                    else if (nread == 0) {
+                        printf("Server closed socket\n");
+                        return SOCKET_ERROR;
+                    }
+                    ptr += nread;
+                }
+                if (sprintf(buffer, "%s%s", operation, status) != 8) code = ERROR;
+                else verifyAnswerFS(buffer);
+            }
             break;
     
         default:
-            //printf("Invalid message: %s", answer);
             code = ERROR;
             break;
     }
