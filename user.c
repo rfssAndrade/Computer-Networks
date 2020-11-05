@@ -413,6 +413,16 @@ int parseAnswerFS(char *operation, int code, int fd) {
             }
             nFiles = atoi(status);
             if (nFiles > 0) {
+                if (nFiles > 9) {
+                    while (nread != 1) {
+                        nread = read(fd, ptr, 1);
+                        if (nread == -1) puts("ERROR ON READ");
+                        else if (nread == 0) {
+                            printf("Server closed socket\n");
+                            return SOCKET_ERROR;
+                        }
+                    }   
+                }
                 ptr = buffer;
                 while (i <= nFiles) {
                     nread = read(fd, ptr, 1);
@@ -422,7 +432,7 @@ int parseAnswerFS(char *operation, int code, int fd) {
                         return SOCKET_ERROR;
                     }
                     if (*ptr != ' ' && *ptr!= '\n') ptr++;
-                    else if (strlen(buffer) > 1) {ptr++; spacesRead++;}
+                    else if (strlen(buffer) > 1) spacesRead++;
 
                     if (spacesRead == 2) {
                         *ptr = '\0';
