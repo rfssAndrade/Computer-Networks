@@ -189,7 +189,7 @@ int parseInput(char *buffer, char *command, char *second, char *third) {
     sscanf(buffer, "%s %s %s", command, second, third);
 
     code = verifyCommand(command);
-    if (code != LOGIN && !isLogged) {
+    if (code != LOGIN && !isLogged && code != EXIT) {
         printf("You aren't logged in\n");
         return ERROR;
     }
