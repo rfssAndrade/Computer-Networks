@@ -501,7 +501,10 @@ int parseAnswerFS(char *operation, int code, int fd) {
                             return SOCKET_ERROR;
                         }
                         fSize -= nread;
-                        if (fSize == -1) nread--;
+                        if (fSize == -1) {
+                            ptr += nread - 1;
+                            *ptr = EOF;
+                        }
                         fwrite(buffer, sizeof(char), nread, fptr);
                         ptr = buffer;
                     }
