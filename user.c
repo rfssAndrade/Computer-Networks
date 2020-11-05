@@ -500,9 +500,10 @@ int parseAnswerFS(char *operation, int code, int fd) {
                             printf("Server closed socket\n");
                             return SOCKET_ERROR;
                         }
+                        fSize -= nread;
+                        if (fSize == -1) nread--;
                         fwrite(buffer, sizeof(char), nread, fptr);
                         ptr = buffer;
-                        fSize -= nread;
                     }
                 }
                 
