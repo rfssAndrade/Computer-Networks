@@ -478,13 +478,14 @@ int parseAnswerFS(char *operation, int code, int fd) {
                 }
                 ptr = buffer;
                 memset(buffer, 0, sizeof(buffer));
-                while (*ptr != ' ') {
+                while (1) {
                     nread = read(fd, ptr, 1);
                     if (nread == -1) puts("ERROR ON READ");
                     else if (nread == 0) {
                         printf("Server closed socket\n");
                         return SOCKET_ERROR;
                     }
+                    if (*ptr == ' ') break;
                     ptr++;
                 }
                 fSize = atoi(buffer);
