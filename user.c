@@ -381,7 +381,6 @@ int verifyAnswerFS(char *answer) {
     else if (strcmp(answer, "RRM NOK\n") == 0) printf("UID doesn't exist: %s", answer);
     else if (strcmp(answer, "RRM INV\n") == 0) printf("Invalid TID: %s", answer);
     else if (strcmp(answer, "RRM ERR\n") == 0) printf("Invalid remove request format: %s", answer);
-    else if (strcmp(answer, "ERR\n") == 0) printf("ERROR: %s\n", answer);
     else if (strcmp(answer, "RRT NOK\n") == 0) printf("No content available for UID: %s", answer);
     else if (strcmp(answer, "RRT EOF\n") == 0) printf("File not available: %s", answer);
     else if (strcmp(answer, "RRT INV\n") == 0) printf("Wrong TID: %s", answer);
@@ -389,6 +388,7 @@ int verifyAnswerFS(char *answer) {
     else if (strcmp(answer, "RLS EOF\n") == 0) printf("No files available: %s", answer);
     else if (strcmp(answer, "RLS INV\n") == 0) printf("Wrong TID: %s", answer);
     else if (strcmp(answer, "RLS ERR\n") == 0) printf("Invalid request format: %s", answer);
+    else if (strcmp(answer, "ERR\n") == 0) printf("ERROR: %s\n", answer);
     else printf("ERROR: %s\n", answer);
 
     return 0;
@@ -422,7 +422,7 @@ int parseAnswerFS(char *operation, int code, int fd) {
                         return SOCKET_ERROR;
                     }
                     if (*ptr != ' ' && *ptr!= '\n') ptr++;
-                    else if (strlen(buffer) > 1) spacesRead++;
+                    else if (strlen(buffer) > 1) {ptr++; spacesRead++;}
 
                     if (spacesRead == 2) {
                         *ptr = '\0';
@@ -445,9 +445,8 @@ int parseAnswerFS(char *operation, int code, int fd) {
                     }
                     ptr += nread;
                 }
-                if (sprintf(buffer, "%s%s", operation, status) != 7) code = ERROR;
+                if (sprintf(buffer, "%s%s", operation, status) != 8) code = ERROR;
                 else verifyAnswerFS(buffer);
-                printf("BUFFER: %s", buffer);
             }
 
             break;
