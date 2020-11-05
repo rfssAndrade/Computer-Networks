@@ -412,9 +412,9 @@ int parseAnswerFS(char *operation, int code, int fd) {
                 ptr += nread;
             }
             nFiles = atoi(status);
-            if (i <= nFiles) {
+            if (nFiles > 0) {
                 ptr = buffer;
-                while (nFiles > 0) {
+                while (i <= nFiles) {
                     nread = read(fd, ptr, 1);
                     if (nread == -1) puts("ERROR ON READ");
                     else if (nread == 0) {
