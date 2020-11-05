@@ -477,6 +477,7 @@ int parseAnswerFS(char *operation, int code, int fd) {
                     }
                 }
                 ptr = buffer;
+                memset(buffer, 0, sizeof(buffer));
                 while (*ptr != ' ') {
                     nread = read(fd, ptr, 1);
                     if (nread == -1) puts("ERROR ON READ");
