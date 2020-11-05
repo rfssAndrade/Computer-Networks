@@ -493,6 +493,7 @@ int parseAnswerFS(char *operation, int code, int fd) {
                 else {
                     ptr = buffer;
                     fptr = fopen(fname, "w");
+                    printf("%s\n", fname);
                     while (fSize > 0) {
                         nread = read(fd, ptr, 127);
                         if (nread == -1) puts("ERROR ON READ");
@@ -507,7 +508,9 @@ int parseAnswerFS(char *operation, int code, int fd) {
                         }
                         fwrite(buffer, sizeof(char), nread, fptr);
                         ptr = buffer;
+                        puts("doing");
                     }
+                    puts("done");
                 }
                 
             }
