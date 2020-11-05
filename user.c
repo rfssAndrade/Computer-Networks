@@ -401,7 +401,6 @@ int parseAnswerFS(char *operation, int code, int fd) {
     int nread = 0, nFiles, spacesRead = 0, i = 1;
 
     switch (code) {
-        nread = 0;
         case RLS:
             while (nread != 3) {
                 nread = read(fd, ptr, 3);
@@ -414,7 +413,7 @@ int parseAnswerFS(char *operation, int code, int fd) {
             }
             nFiles = atoi(status);
             if (i <= nFiles) {
-                *ptr = buffer;
+                ptr = buffer;
                 while (nFiles > 0) {
                     nread = read(fd, ptr, 1);
                     if (nread == -1) puts("ERROR ON READ");
@@ -431,7 +430,7 @@ int parseAnswerFS(char *operation, int code, int fd) {
                         i++;
                         spacesRead = 0;
                         memset(buffer, 0, sizeof(buffer));
-                        *ptr = buffer;
+                        ptr = buffer;
                     }
                 }
             }
