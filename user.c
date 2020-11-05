@@ -24,9 +24,10 @@ void makeConnection();
 int parseInput(char *buffer, char *command, char *second, char *third);
 void formatMessage(char *message, int code, char *second, char *third);
 void sendMessage(int code, int fd_as, int fd_fs, char *message);
-void readMessage(int fd, char *answer);
+int readMessageAS(int fd, char *answer);
+int readMessageFS(int fd);
 int verifyAnswerAS(char *answer);
-int parseAnswerFS(char *answer, char* command, char *second, char *third);
+int parseAnswerFS(char *operation, int code, int fd);
 int verifyAnswerFS(char *answer);
 int parseAnswerAS(char *answer, char *command, char *second);
 
@@ -158,16 +159,14 @@ void makeConnection() {
                     FD_SET(fd_fs, &inputs);
                 }
                 sendMessage(code, fd_as, fd_fs, message);
-                printf("SENT: %s", message);
             }
             else if (FD_ISSET(fd_as, &testfds)) {
-                readMessage(fd_as, answer);
+                code = readMessageAS(fd_as, answer);
                 if (verifyAnswerAS(answer) != 0) parseAnswerAS(answer, command, second);
             }
             else if (fd_fs != -1 && FD_ISSET(fd_fs, &testfds)) {
-                readMessage(fd_fs, answer);
-                printf("RECEIVED FS: %s", answer);
-                if (verifyAnswerFS(answer) != 0) parseAnswerFS(answer, command, second, third);
+                code = readMessageFS(fd_fs);
+                //verifyAnswerFS(answer);
                 FD_CLR(fd_fs, &inputs);
                 close(fd_fs); //verify?
                 fd_fs = -1;
@@ -176,6 +175,7 @@ void makeConnection() {
             break;
         }
         if (code == EXIT) break;
+        else if (code == SOCKET_ERROR) break;
     }
 
     freeaddrinfo(res_as);
@@ -223,8 +223,6 @@ int parseInput(char *buffer, char *command, char *second, char *third) {
 
         case LIST:
         case REMOVE:
-            break;
-
         case EXIT:
             break;
     
@@ -292,21 +290,43 @@ void sendMessage(int code, int fd_as, int fd_fs, char *message) {
 }
 
 
-void readMessage(int fd, char *answer) {
+int readMessageFS(int fd) {
+    char operation[4];
+    char *ptr = operation;
+    int nread, code;
+
+    while (nread != 3) {
+        nread = read(fd, ptr, 3);
+        if (nread == -1) puts("ERROR ON READ");
+        else if (nread == 0) {
+            printf("Server closed socket\n");
+            return SOCKET_ERROR;
+        }
+        ptr += nread;
+    }
+    *ptr = '\0';
+
+    code = verifyOperation(operation);
+    if (code == RLS || code == RRT) parseAnswerFS(operation, code, fd);
+}
+
+
+int readMessageAS(int fd, char *answer) {
     char *ptr = answer;
     int nread;
-     // um bocado martelado ver melhor
+    // um bocado martelado ver melhor
     while (*ptr != '\n') { // se o servidor não cumprir o protocolo isto não vai funcionar
         nread = read(fd, ptr, 127); //change size
         if (nread == -1) puts("ERROR ON READ");
         else if(nread == 0) {
             printf("Server closed socket\n");
-            exit(1);
+            return SOCKET_ERROR;
         }
         ptr += nread;
         if (*(ptr-1) == '\n') break;
     }
     *(ptr++) = '\0';
+    return 0;
 }
 
 
@@ -362,38 +382,87 @@ int verifyAnswerFS(char *answer) {
     else if (strcmp(answer, "RRM INV\n") == 0) printf("Invalid TID: %s", answer);
     else if (strcmp(answer, "RRM ERR\n") == 0) printf("Invalid remove request format: %s", answer);
     else if (strcmp(answer, "ERR\n") == 0) printf("ERROR: %s\n", answer);
-    else return 1;
+    else if (strcmp(answer, "RRT NOK\n") == 0) printf("No content available for UID: %s", answer);
+    else if (strcmp(answer, "RRT EOF\n") == 0) printf("File not available: %s", answer);
+    else if (strcmp(answer, "RRT INV\n") == 0) printf("Wrong TID: %s", answer);
+    else if (strcmp(answer, "RRT ERR\n") == 0) printf("Invalid request format: %s", answer);
+    else if (strcmp(answer, "RLS EOF\n") == 0) printf("No files available: %s", answer);
+    else if (strcmp(answer, "RLS INV\n") == 0) printf("Wrong TID: %s", answer);
+    else if (strcmp(answer, "RLS ERR\n") == 0) printf("Invalid request format: %s", answer);
+    else printf("ERROR: %s\n", answer);
 
     return 0;
 }
 
 
-int parseAnswerFS(char *answer, char* command, char *second, char *third) {
-    int code;
-
-    sscanf(answer, "%s %s %s", command, second, third);
-
-    code = verifyOperation(command);
+int parseAnswerFS(char *operation, int code, int fd) {
+    char status[4], buffer[128];
+    char *ptr = status;
+    int nread = 0, nFiles, spacesRead = 0, i = 1;
 
     switch (code) {
+        nread = 0;
         case RLS:
-            printf("%s", answer);
+            while (nread != 3) {
+                nread = read(fd, ptr, 3);
+                if (nread == -1) puts("ERROR ON READ");
+                else if (nread == 0) {
+                    printf("Server closed socket\n");
+                    return SOCKET_ERROR;
+                }
+                ptr += nread;
+            }
+            nFiles = atoi(status);
+            if (i <= nFiles) {
+                *ptr = buffer;
+                while (nFiles > 0) {
+                    nread = read(fd, ptr, 1);
+                    if (nread == -1) puts("ERROR ON READ");
+                    else if (nread == 0) {
+                        printf("Server closed socket\n");
+                        return SOCKET_ERROR;
+                    }
+                    if (*ptr != ' ' || *ptr!= '\n') ptr++;
+                    else if (strlen(buffer) > 1) spacesRead++;
+
+                    if (spacesRead == 2) {
+                        *(ptr-1) = '\0';
+                        printf("%d - %s\n", i, buffer);
+                        i++;
+                        spacesRead = 0;
+                        memset(buffer, 0, sizeof(buffer));
+                        *ptr = buffer;
+                    }
+                }
+            }
+            else {
+                nread = 0;
+                while (nread != 2) {
+                    nread = read(fd, ptr, 2);
+                    if (nread == -1) puts("ERROR ON READ");
+                    else if (nread == 0) {
+                        printf("Server closed socket\n");
+                        return SOCKET_ERROR;
+                    }
+                    ptr += nread;
+                }
+                if (sprintf(buffer, "%s%s", operation, status) != 7) code = ERROR;
+                else verifyAnswerFS(buffer);
+                printf("BUFFER: %s", buffer);
+            }
+
             break;
 
         case RRT:
-            if (strcmp(answer, "RRT OK\n") == 0) printf("Retrieve request approved: %s", answer); // do things with size
-            else if (strcmp(answer, "RRT EOF\n") == 0) printf("File not available: %s", answer);
-            else if (strcmp(answer, "RRT NOK\n") == 0) printf("No content available for UID: %s", answer);
-            else if (strcmp(answer, "RRT INV\n") == 0) printf("Wrong TID: %s", answer);
-            else if (strcmp(answer, "RRT ERR\n") == 0) printf("Invalid request format: %s", answer);
-            printf("%s", answer);
+            //if (strcmp(answer, "RRT OK\n") == 0) printf("Retrieve request approved: %s", answer); // do things with size
+            //printf("%s", answer);
             break;
     
         default:
-            printf("Invalid message: %s", answer);
+            //printf("Invalid message: %s", answer);
             code = ERROR;
             break;
     }
 
-    return ERROR;
+    return code;
 }

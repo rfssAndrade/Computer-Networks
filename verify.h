@@ -1,6 +1,7 @@
 #ifndef VERIFY_H
 #define VERIFY_H
 
+
 // SIZES
 #define PASS_SIZE 8
 #define UID_SIZE 5
@@ -12,7 +13,6 @@
 
 
 //CODES USER INPUT
-#define ERROR -1
 #define REG 1
 #define LOGIN 2
 #define REQ 3
@@ -40,6 +40,12 @@
 #define M 4
 #define Q 5
 #define V 6
+
+
+// CODES ERROR
+#define ERROR -1
+#define SOCKET_ERROR -2
+
 
 
 int verifyArg(char *flag, char *arg);

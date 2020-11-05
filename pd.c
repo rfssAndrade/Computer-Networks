@@ -88,7 +88,7 @@ void makeConnection() {
     socklen_t addrlen;
     struct addrinfo hints_as, hints_pd, *res_as, *res_pd;
     struct sockaddr_in addr_client, addr_server;
-    char buffer[128], command[5], second[6], third[9], answer[128], message[42]; //change answer
+    char buffer[128], command[8], second[8], third[16], answer[128], message[128];
     fd_set inputs, testfds;
 
     fd_client = socket(AF_INET, SOCK_DGRAM, 0);
@@ -127,7 +127,7 @@ void makeConnection() {
             case 0:
                 break;
             case -1:
-                perror("select"); // certo?
+                perror("select");
                 exit(1);
             default:
                 memset(answer, 0, sizeof(answer));
@@ -138,7 +138,7 @@ void makeConnection() {
                 memset(third, 0, sizeof(third));
 
                 if (FD_ISSET(0, &testfds)) {
-                    fgets(buffer, 128, stdin); // se a pass for maior (password1) ele não vai ler o 1 e vai ter sucesso ao mandar para o server. Correto?
+                    fgets(buffer, 128, stdin);
                     code = parseInput(buffer, command, second, third);
 
                     if (code == ERROR || (code == EXIT && !isRegistered)) break;
