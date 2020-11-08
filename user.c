@@ -327,6 +327,7 @@ int readMessageFS(int fd) {
             ptr += nread;
             if (*(ptr-1) == '\n') break;
         }
+        *ptr = '\0';
         verifyAnswerFS(operation);
     }
 
