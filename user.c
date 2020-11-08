@@ -1,3 +1,5 @@
+// colocar socket timeout
+
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/socket.h>
@@ -5,6 +7,8 @@
 #include <string.h>
 #include <stdio.h>
 #include "verify.h"
+#include <sys/stat.h>
+#include <sys/types.h>
 
 
 char *ASIP = NULL;
@@ -30,6 +34,8 @@ int verifyAnswerAS(char *answer);
 int parseAnswerFS(char *operation, int code, int fd);
 int verifyAnswerFS(char *answer);
 int parseAnswerAS(char *answer, char *command, char *second);
+int uploadFile(int fd, char *message);
+off_t fileSize(char *filename);
 
 
 int main(int argc, char **argv) {
@@ -147,7 +153,6 @@ void makeConnection() {
 
                 if (code == ERROR || code == EXIT) break;
 
-                formatMessage(message, code, second, third);
                 if (code > 4) {
 
                     fd_fs = socket(AF_INET, SOCK_STREAM, 0);
@@ -158,7 +163,11 @@ void makeConnection() {
 
                     FD_SET(fd_fs, &inputs);
                 }
-                sendMessage(code, fd_as, fd_fs, message);
+                if (code == UPLOAD) uploadFile(fd_fs, message);
+                else {
+                    formatMessage(message, code, second, third);
+                    sendMessage(code, fd_as, fd_fs, message); 
+                }
             }
             else if (FD_ISSET(fd_as, &testfds)) {
                 code = readMessageAS(fd_as, answer);
@@ -249,7 +258,7 @@ void formatMessage(char *message, int code, char *second, char *third) {
             break;
 
         case VAL:
-            sprintf(message, "AUT %s %d %s\n", uid, rid, second);
+            sprintf(message, "AUT %s %04d %s\n", uid, rid, second);
             break;
 
         case LIST:
@@ -258,10 +267,6 @@ void formatMessage(char *message, int code, char *second, char *third) {
 
         case RETRIEVE:
             sprintf(message, "RTV %s %04d %s\n", uid, tid, fname);
-            break;
-        
-        case UPLOAD:
-            puts("TO DO");
             break;
 
         case DELETE:
@@ -283,7 +288,10 @@ void sendMessage(int code, int fd_as, int fd_fs, char *message) {
 
     while (nleft > 0) {
         nwritten = write(fd, ptr, nleft);
-        if (nwritten <= 0) puts("ERROR ON SEND"); //?????
+        if (nwritten <= 0) {
+            puts("ERROR ON SEND");
+            break;
+        } //?????
         nleft -= nwritten;
         ptr += nwritten;
     }
@@ -493,6 +501,10 @@ int parseAnswerFS(char *operation, int code, int fd) {
                 else {
                     ptr = buffer;
                     fptr = fopen(fname, "w");
+                    if (fptr == NULL) {
+                        printf("Error creating file %s\n", fname); // what happens if file already exists?
+                        return ERROR;
+                    }
                     printf("%s\n", fname);
                     while (fSize > 0) {
                         nread = read(fd, ptr, 127);
@@ -508,9 +520,8 @@ int parseAnswerFS(char *operation, int code, int fd) {
                         }
                         fwrite(buffer, sizeof(char), nread, fptr);
                         ptr = buffer;
-                        puts("doing");
                     }
-                    puts("done");
+                    printf("File in ./%s\n", fname);
                 }
                 
             }
@@ -536,4 +547,70 @@ int parseAnswerFS(char *operation, int code, int fd) {
     }
 
     return code;
+}
+
+
+int uploadFile(int fd, char *message) {
+    FILE *fptr;
+    off_t fsize;
+    int len, nwritten, nread;
+    char buffer[1024], *ptr = message;
+
+    fptr = fopen(fname, "r");
+    if (fptr == NULL) {
+        printf("Error opening file %s\n", fname); // what happens if file already exists?
+        return ERROR;
+    }
+
+    fsize = fileSize(fname);
+    if (fsize == ERROR) {
+        printf("Cannot determine size of %s\n", fname);
+        return ERROR;
+    }
+
+    len = sprintf(message, "UPL %s %04d %s %lld ", uid, tid, fname, fsize);
+    while (len > 0) {
+        nwritten = write(fd, ptr, len);
+        if (nwritten <= 0) {
+            puts("ERROR ON SEND");
+            return ERROR;
+        } //?????
+        len -= nwritten;
+        ptr += nwritten;
+    }
+    ptr = buffer;
+    while (fsize > 0) {
+        nread = fread(buffer, sizeof(char), 1023, fptr);
+        if (nread <= 0) {
+            printf("Error on read %s\n", fname);
+            return ERROR;
+        }
+
+        while (nread > 0) {
+            nwritten = write(fd, ptr, nread);
+            if (nwritten <= 0) {
+                printf("ERROR ON SEND\n");
+                return ERROR;
+            }
+            fsize -= nwritten;
+            nread -= nwritten;
+            ptr += nwritten;
+        }
+
+        ptr = buffer;
+    }
+    if (fsize <= 0) write(fd, "\n", 1);
+
+    printf("%s sent with success\n", fname);
+    return 0;
+}
+
+
+off_t fileSize(char *filename) {
+    struct stat st;
+
+    if (stat(filename, &st) == 0)
+        return st.st_size;
+
+    return ERROR;
 }
