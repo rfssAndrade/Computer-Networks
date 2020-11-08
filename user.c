@@ -299,7 +299,7 @@ void sendMessage(int code, int fd_as, int fd_fs, char *message) {
 
 
 int readMessageFS(int fd) {
-    char operation[4];
+    char operation[8];
     char *ptr = operation;
     int nread, code;
 
@@ -316,6 +316,19 @@ int readMessageFS(int fd) {
 
     code = verifyOperation(operation);
     if (code == RLS || code == RRT) parseAnswerFS(operation, code, fd);
+    else {
+        while (1) {
+            nread = read(fd, ptr, 1);
+            if (nread == -1) puts("ERROR ON READ");
+            else if (nread == 0) {
+                printf("Server closed socket\n");
+                return SOCKET_ERROR;
+            }
+            ptr += nread;
+            if (*(ptr-1) == '\n') break;
+        }
+        verifyAnswerFS(operation);
+    }
 
     return 0;
 }
