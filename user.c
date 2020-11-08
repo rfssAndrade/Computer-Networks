@@ -254,7 +254,7 @@ void formatMessage(char *message, int code, char *second, char *third) {
         case REQ:
             rid = rand() % 10000;
             if (strlen(third) == 0) sprintf(message, "REQ %s %04d %s\n", uid, rid, second);
-            else sprintf(message, "REQ %s %04d %s %s\n", uid, rid, second, fname);
+            else sprintf(message, "REQ %s %04d %s %s\n", uid, rid, second, third);
             break;
 
         case VAL:
