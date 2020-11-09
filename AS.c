@@ -255,18 +255,18 @@ int registerUser(char *uid, char *pass, char *PDIP, char *PDport, struct sockadd
         len = strlen(pass);
         nwritten = fwrite(pass, sizeof(char), len, fptr);
         if (nwritten != len) {
-            close(fptr);
+            fclose(fptr);
             return NOK;
         }
     }
     else {
         nread = fread(buffer, sizeof(char), 16, fptr);
         if (strcmp(buffer, pass) != 0) {
-            close(fptr);
+            fclose(fptr);
             return NOK;
         }
     }
-    close(fptr);
+    fclose(fptr);
 
     sprintf(path, "./USERS/%s/reg.txt", "w");
     fptr = fopen(path, "w");
@@ -276,10 +276,10 @@ int registerUser(char *uid, char *pass, char *PDIP, char *PDport, struct sockadd
     len = strlen(buffer);
     nwritten = fwrite(buffer, sizeof(char), len, fptr);
     if (nwritten != len) {
-            close(fptr);
+            fclose(fptr);
             return NOK;
     }
-    close(fptr);
+    fclose(fptr);
     return OK;
 }
 

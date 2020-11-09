@@ -525,6 +525,7 @@ int parseAnswerFS(char *operation, int code, int fd) {
                         if (nread == -1) puts("ERROR ON READ");
                         else if (nread == 0) {
                             printf("Server closed socket\n");
+                            fclose(fptr);
                             return SOCKET_ERROR;
                         }
                         fSize -= nread;
@@ -537,7 +538,7 @@ int parseAnswerFS(char *operation, int code, int fd) {
                     }
                     printf("File in ./%s\n", fname);
                 }
-                
+                fclose(fptr);
             }
             else {
                 nread = 0;
@@ -579,6 +580,7 @@ int uploadFile(int fd, char *message) {
     fsize = fileSize(fname);
     if (fsize == ERROR) {
         printf("Cannot determine size of %s\n", fname);
+        fclose(fptr);
         return ERROR;
     }
 
@@ -586,6 +588,7 @@ int uploadFile(int fd, char *message) {
     while (len > 0) {
         nwritten = write(fd, ptr, len);
         if (nwritten <= 0) {
+            fclose(fptr);
             puts("ERROR ON SEND");
             return ERROR;
         } //?????
@@ -596,6 +599,7 @@ int uploadFile(int fd, char *message) {
     while (fsize > 0) {
         nread = fread(buffer, sizeof(char), 1023, fptr);
         if (nread <= 0) {
+            fclose(fptr);
             printf("Error on read %s\n", fname);
             return ERROR;
         }
@@ -603,6 +607,7 @@ int uploadFile(int fd, char *message) {
         while (nread > 0) {
             nwritten = write(fd, ptr, nread);
             if (nwritten <= 0) {
+                fclose(fptr);
                 printf("ERROR ON SEND\n");
                 return ERROR;
             }
@@ -616,6 +621,7 @@ int uploadFile(int fd, char *message) {
     if (fsize <= 0) write(fd, "\n", 1);
 
     printf("%s sent with success\n", fname);
+    fclose(fptr);
     return 0;
 }
 
