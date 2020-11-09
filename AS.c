@@ -4,11 +4,12 @@
 #include <netdb.h>
 #include <string.h>
 #include <stdio.h>
-#include "verify.h"
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <signal.h>
 #include <dirent.h>
+#include <arpa/inet.h>
+#include "verify.h"
 
 
 char * ASport = NULL;
@@ -186,12 +187,14 @@ int readMessageUdp(int fd, char *buffer, struct sockaddr_in addr) {
     int code;
     socklen_t addrlen = sizeof(addr);
     char ip[INET_ADDRSTRLEN];
+    unsigned int port;
 
     code = recvfrom(fd, buffer, 127, 0, (struct sockaddr *)&addr, &addrlen);
     if (code == ERROR) printf("Error on receive\n");
     else if (verbose) {
         inet_ntop(AF_INET, &addr.sin_addr, ip, sizeof(ip));
-        printf("RECEIVED FROM %s %s: %s\n", ip, addr.sin_port, buffer);
+        port = ntohs(addr.sin_port);
+        printf("RECEIVED FROM %s %u: %s\n", ip, port, buffer);
     }
     return code;
 }
