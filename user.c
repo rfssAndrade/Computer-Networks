@@ -44,8 +44,6 @@ int main(int argc, char **argv) {
     ASIP = malloc(16 * sizeof(char));
     ASport = malloc(6 * sizeof(char));
 
-    puts("HERE");
-
     parseArgs(argc, argv);
 
     uid = malloc(5 * sizeof(char));
@@ -121,7 +119,7 @@ void makeConnection() {
     hints.ai_socktype = SOCK_STREAM;
     
     n = getaddrinfo(ASIP, ASport, &hints, &res_as);
-    if (code != 0) exit(1);
+    if (n != 0) exit(1);
 
     n = getaddrinfo(FSIP, FSport, &hints, &res_fs);
     if (n != 0) exit(1);
