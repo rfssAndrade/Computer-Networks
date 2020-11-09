@@ -106,9 +106,9 @@ void makeConnection() {
     hints_udp.ai_flags = AI_PASSIVE;
 
     memset(&hints_tcp, 0, sizeof hints_tcp);
-    hints_udp.ai_family = AF_INET;
-    hints_udp.ai_socktype = SOCK_STREAM;
-    hints_udp.ai_flags = AI_PASSIVE;
+    hints_tcp.ai_family = AF_INET;
+    hints_tcp.ai_socktype = SOCK_STREAM;
+    hints_tcp.ai_flags = AI_PASSIVE;
 
     n = getaddrinfo(NULL, ASport, &hints_udp, &res_udp);
     if (n != 0) exit(1);
@@ -116,10 +116,10 @@ void makeConnection() {
     n = getaddrinfo(NULL, ASport, &hints_tcp, &res_tcp);
     if (n != 0) exit(1);
 
+    if (bind(fd_udp, res_udp->ai_addr, res_udp->ai_addrlen) == -1) exit(1);
 
     if (bind(fd_tcp, res_tcp->ai_addr, res_tcp->ai_addrlen) == -1) exit(1);
     if (listen(fd_tcp, 20) == -1) exit(1); // what size?
-    if (bind(fd_udp, res_udp->ai_addr, res_udp->ai_addrlen) == -1) exit(1);
 
     while (1) {
         testfds = inputs;
