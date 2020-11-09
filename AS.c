@@ -185,11 +185,14 @@ void closeFds(int size, int *fds, int fd_udp, int fd_tcp) {
 int readMessageUdp(int fd, char *buffer, struct sockaddr_in addr) {
     int code;
     socklen_t addrlen = sizeof(addr);
+    char ip[INET_ADDRSTRLEN];
 
     code = recvfrom(fd, buffer, 127, 0, (struct sockaddr *)&addr, &addrlen);
     if (code == ERROR) printf("Error on receive\n");
-    else if (verbose) printf("RECEIVED FROM %u %s: %s\n", addr.sin_addr.s_addr, addr.sin_port, buffer);
-
+    else if (verbose) {
+        inet_ntop(AF_INET, &addr.sin_addr, ip, sizeof(ip));
+        printf("RECEIVED FROM %s %s: %s\n", ip, addr.sin_port, buffer);
+    }
     return code;
 }
 
