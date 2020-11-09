@@ -44,6 +44,8 @@ int main(int argc, char **argv) {
     ASIP = malloc(16 * sizeof(char));
     ASport = malloc(6 * sizeof(char));
 
+    puts("HERE");
+
     parseArgs(argc, argv);
 
     uid = malloc(5 * sizeof(char));
