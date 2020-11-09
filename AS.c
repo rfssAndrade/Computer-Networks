@@ -17,10 +17,12 @@ int verbose = 0;
 
 void parseArgs(int argc, char **argv);
 void closeFds(int size, int *fds, int fd_udp, int fd_tcp);
+int readMeassageUdp(int fd, char *buffer, struct sockaddr_in addr);
+int parseMessage(char *buffer, char *message, char *operation, char *uid, char *third, char *fourth, char *fifth, struct sockaddr_in addr);
 int formatMessage(int codeOperation, int codeStatus, char *message);
+void sendMessageUdp(int fd, char *message, int len, struct sockaddr_in addr);
 int searchDir(DIR *d, struct dirent *dir, char *uid);
 int registerUser(char *uid, char *pass, char *PDIP, char *PDport, struct sockaddr_in addr);
-void sendMessageUdp(int fd, char *message, int len, struct sockaddr_in addr);
 
 
 int main(int argc, char **argv) {
@@ -60,7 +62,7 @@ void parseArgs(int argc, char ** argv) {
 
 
 void makeConnection() {
-    int fd_udp, fd_tcp, code, out_fds, new_fd;
+    int fd_udp, fd_tcp, out_fds, new_fd;
     ssize_t n;
     socklen_t addrlen;
     struct addrinfo hints_udp, hints_tcp, *res_udp, *res_tcp;
@@ -68,7 +70,7 @@ void makeConnection() {
     fd_set inputs, testfds;
     struct sigaction action;
     pid_t pid;
-    int *fds = calloc(fds, 20 * sizeof(int));
+    int *fds = calloc(&fds, 20 * sizeof(int));
     int nextFreeEntry = 0;
     int size = 20;
     char buffer[128], message[128];
@@ -80,7 +82,7 @@ void makeConnection() {
 
     memset(&action, 0, sizeof action);
     action.sa_handler = SIG_IGN;
-    if (sigaction(SICHLD, &action, NULL) == -1) exit(1); //????
+    if (sigaction(SIGPIPE, &action, NULL) == -1) exit(1); //????
 
     fd_udp = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd_udp == -1) exit(1);
