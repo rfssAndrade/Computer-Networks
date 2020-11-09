@@ -78,9 +78,13 @@ void makeConnection() {
     char buffer[128], message[128];
     char operation[4], uid[6], third[9], fourth[16], fifth[26];
     int code, len;
+    DIR *d;
 
-    n = mkdir("USERS", 0777);
-    if (n == -1) exit(1);
+    if ((d = opendir("USERS")) == NULL) {
+        n = mkdir("USERS", 0777);
+        if (n == -1) exit(1);
+    }
+    else closedir(d);
 
     memset(&action, 0, sizeof action);
     action.sa_handler = SIG_IGN;
