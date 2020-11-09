@@ -22,7 +22,7 @@ void closeFds(int size, int *fds, int fd_udp, int fd_tcp);
 int readMessageUdp(int fd, char *buffer, struct sockaddr_in addr);
 int parseMessage(char *buffer, char *message, char *operation, char *uid, char *third, char *fourth, char *fifth, struct sockaddr_in addr);
 int formatMessage(int codeOperation, int codeStatus, char *message);
-void sendMessageUdp(int fd, char *message, int len, struct sockaddr_in addr);
+void sendMessageUdp(int fd, char *message, int len, struct sockaddr_in *addr);
 int searchDir(DIR *d, struct dirent *dir, char *uid);
 int registerUser(char *uid, char *pass, char *PDIP, char *PDport, struct sockaddr_in addr);
 
@@ -148,7 +148,7 @@ void makeConnection() {
                     n = readMessageUdp(fd_udp, buffer, addr);
                     if (n == -1) break;
                     len = parseMessage(buffer, message, operation, uid, third, fourth, fifth, addr);
-                    sendMessageUdp(fd_udp, message, len, addr);
+                    sendMessageUdp(fd_udp, message, len, &addr);
                 }
                 else if (FD_ISSET(fd_tcp, &testfds)) {
                     addrlen = sizeof(addr);
@@ -318,7 +318,7 @@ int formatMessage(int codeOperation, int codeStatus, char *message) {
 }
 
 
-void sendMessageUdp(int fd, char *message, int len, struct sockaddr_in addr) {
+void sendMessageUdp(int fd, char *message, int len, struct sockaddr_in *addr) {
     int code;
     socklen_t addrlen = sizeof(addr);
     char ip[INET_ADDRSTRLEN];
@@ -327,8 +327,8 @@ void sendMessageUdp(int fd, char *message, int len, struct sockaddr_in addr) {
     code = sendto(fd, message, len, 0, (struct sockaddr *)&addr, addrlen);
     if (code == ERROR) puts("Error on send\n");
     else if (verbose) {
-        inet_ntop(AF_INET, &addr.sin_addr, ip, sizeof(ip));
-        port = ntohs(addr.sin_port);
+        inet_ntop(AF_INET, &addr->sin_addr, ip, sizeof(ip));
+        port = ntohs(addr->sin_port);
         printf("SENT TO %s %u: %s\n", ip, port, message);
     }
 }
