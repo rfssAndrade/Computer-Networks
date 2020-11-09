@@ -19,7 +19,7 @@ int verbose = 0;
 void parseArgs(int argc, char **argv);
 void makeConnection();
 void closeFds(int size, int *fds, int fd_udp, int fd_tcp);
-int readMessageUdp(int fd, char *buffer, struct sockaddr_in addr);
+int readMessageUdp(int fd, char *buffer, struct sockaddr_in *addr);
 int parseMessage(char *buffer, char *message, char *operation, char *uid, char *third, char *fourth, char *fifth, struct sockaddr_in addr);
 int formatMessage(int codeOperation, int codeStatus, char *message);
 void sendMessageUdp(int fd, char *message, int len, struct sockaddr_in addr);
@@ -147,7 +147,7 @@ void makeConnection() {
                 memset(fifth, 0, sizeof(fifth));
                 
                 if (FD_ISSET(fd_udp, &testfds)) {
-                    n = readMessageUdp(fd_udp, buffer, addr);
+                    n = readMessageUdp(fd_udp, buffer, &addr);
                     if (n == -1) break;
                     len = parseMessage(buffer, message, operation, uid, third, fourth, fifth, addr);
                     //sendMessageUdp(fd_udp, message, len, addr);
@@ -166,7 +166,10 @@ void makeConnection() {
                     FD_SET(new_fd, &inputs);
                     fds[nextFreeEntry] = new_fd;
                     nextFreeEntry++;
-                    if (nextFreeEntry == size) fds = realloc(fds, (size * 2) * sizeof(int));
+                    if (nextFreeEntry == size) {
+                        fds = realloc(fds, (size * 2) * sizeof(int));
+                        size *= 2;
+                    }
                 }
                 else {
                     for (int i = 0; i < size; i++) {
@@ -192,7 +195,7 @@ void closeFds(int size, int *fds, int fd_udp, int fd_tcp) {
 }
 
 
-int readMessageUdp(int fd, char *buffer, struct sockaddr_in addr) {
+int readMessageUdp(int fd, char *buffer, struct sockaddr_in *addr) {
     int code;
     socklen_t addrlen = sizeof(addr);
     char ip[INET_ADDRSTRLEN];
@@ -201,8 +204,8 @@ int readMessageUdp(int fd, char *buffer, struct sockaddr_in addr) {
     code = recvfrom(fd, buffer, 127, 0, (struct sockaddr *)&addr, &addrlen);
     if (code == ERROR) printf("Error on receive\n");
     else if (verbose) {
-        inet_ntop(AF_INET, &addr.sin_addr, ip, sizeof(ip));
-        port = ntohs(addr.sin_port);
+        inet_ntop(AF_INET, &addr->sin_addr, ip, sizeof(ip));
+        port = ntohs(addr->sin_port);
         printf("RECEIVED FROM %s %u: %s\n", ip, port, buffer); // ver \n
     }
     return code;
