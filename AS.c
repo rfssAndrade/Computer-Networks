@@ -17,7 +17,7 @@ int verbose = 0;
 
 void parseArgs(int argc, char **argv);
 void closeFds(int size, int *fds, int fd_udp, int fd_tcp);
-int readMeassageUdp(int fd, char *buffer, struct sockaddr_in addr);
+int readMessageUdp(int fd, char *buffer, struct sockaddr_in addr);
 int parseMessage(char *buffer, char *message, char *operation, char *uid, char *third, char *fourth, char *fifth, struct sockaddr_in addr);
 int formatMessage(int codeOperation, int codeStatus, char *message);
 void sendMessageUdp(int fd, char *message, int len, struct sockaddr_in addr);
@@ -70,9 +70,9 @@ void makeConnection() {
     fd_set inputs, testfds;
     struct sigaction action;
     pid_t pid;
-    int *fds = calloc(&fds, 20 * sizeof(int));
-    int nextFreeEntry = 0;
     int size = 20;
+    int *fds = calloc(size, sizeof(int));
+    int nextFreeEntry = 0;
     char buffer[128], message[128];
     char operation[4], uid[6], third[9], fourth[16], fifth[26];
     int code, len;
@@ -176,7 +176,7 @@ void closeFds(int size, int *fds, int fd_udp, int fd_tcp) {
 }
 
 
-int readMeassageUdp(int fd, char *buffer, struct sockaddr_in addr) {
+int readMessageUdp(int fd, char *buffer, struct sockaddr_in addr) {
     int code;
     socklen_t addrlen = sizeof(addr);
 
@@ -241,7 +241,7 @@ int registerUser(char *uid, char *pass, char *PDIP, char *PDport, struct sockadd
     if (dUsers == NULL) return NOK;
 
     sprintf(path, "./USERS/%s", uid);
-    if (!searchDir(dUsers, dir, uid)) code = mkdir(path, "0777");
+    if (!searchDir(dUsers, dir, uid)) code = mkdir(path, 0777);
     if (code == -1) {
         closedir(dUsers);
         return NOK;
