@@ -147,14 +147,12 @@ void makeConnection() {
                     sendMessageClient(fd_client, message, res_as);
                 }
                 else if (FD_ISSET(fd_client, &testfds)) {
-                    puts("HELLO Client");
                     readMessage(fd_client, answer, addr_client);
                     verifyAnswer(answer);
                 }
                 else if (FD_ISSET(fd_server, &testfds)) {
                     puts("HELLO Server");
                     readMessage(fd_server, answer, addr_server);
-                    n = verifyAnswer(answer);
                     sscanf(answer, "%s %s", command, second);
                     if (verifyOperation(command) == VLC && strcmp(uid, second) == 0) {
                         sprintf(message, "RVC %s OK\n", uid);
