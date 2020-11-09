@@ -22,7 +22,7 @@ void makeConnection();
 int verifyAnswer(char *answer);
 void formatMessage(char *message, int code, char *second, char *third);
 void sendMessageClient(int fd, char *message, struct addrinfo *res);
-void readMessageClient(int fd, char *answer, struct sockaddr_in addr);
+void readMessage(int fd, char *answer, struct sockaddr_in addr);
 void sendMessageServer(int fd, char *message, struct sockaddr_in addr);
 
 
@@ -147,15 +147,14 @@ void makeConnection() {
                     sendMessageClient(fd_client, message, res_as);
                 }
                 else if (FD_ISSET(fd_client, &testfds)) {
-                    readMessageClient(fd_client, answer, addr_client);
+                    puts("HELLO Client");
+                    readMessage(fd_client, answer, addr_client);
                     verifyAnswer(answer);
                 }
                 else if (FD_ISSET(fd_server, &testfds)) {
-                    addrlen = sizeof(addr_server);
-                    n = recvfrom(fd_server, answer, 128, 0, (struct sockaddr *)&addr_server, &addrlen);
-                    if (n == ERROR) puts("ERROR");//??????
-                    //readMessageClient(fd_server, answer, addr_server);
-                    //n = verifyAnswer(answer);
+                    puts("HELLO Server");
+                    readMessage(fd_server, answer, addr_server);
+                    n = verifyAnswer(answer);
                     sscanf(answer, "%s %s", command, second);
                     if (verifyOperation(command) == VLC && strcmp(uid, second) == 0) {
                         sprintf(message, "RVC %s OK\n", uid);
@@ -165,9 +164,7 @@ void makeConnection() {
                         sprintf(message, "RVC %s NOK\n", uid);
                         printf("Bad message: %s\n", answer);
                     }
-                    //sendMessageServer(fd_server, message, addr_server);
-                    n = sendto(fd_server, message, strlen(message), 0, (struct sockaddr *)&addr_server, addrlen); //mudar
-                    if (n == ERROR) puts("ERROR");
+                    sendMessageServer(fd_server, message, addr_server);
                 }
                 break;
         }
@@ -234,7 +231,7 @@ void sendMessageClient(int fd, char *message, struct addrinfo *res) {
 }
 
 
-void readMessageClient(int fd, char *answer, struct sockaddr_in addr) {
+void readMessage(int fd, char *answer, struct sockaddr_in addr) {
     int code;
     socklen_t addrlen = sizeof(addr);
 
