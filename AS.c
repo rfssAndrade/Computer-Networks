@@ -118,7 +118,7 @@ void makeConnection() {
 
     if (bind(fd_udp, res_udp->ai_addr, res_udp->ai_addrlen) == -1) exit(1);
 
-    if (bind(fd_tcp, res_tcp->ai_addr, res_tcp->ai_addrlen) == -1) exit(1);
+    while (bind(fd_tcp, res_tcp->ai_addr, res_tcp->ai_addrlen) == -1) puts("Can't bind\n");
     if (listen(fd_tcp, 20) == -1) exit(1); // what size?
 
     while (1) {
