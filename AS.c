@@ -188,12 +188,7 @@ int readMessageUdp(int fd, char *buffer, struct sockaddr_in addr) {
 
     code = recvfrom(fd, buffer, 127, 0, (struct sockaddr *)&addr, &addrlen);
     if (code == ERROR) printf("Error on receive\n");
-    else if (verbose){
-        printf("%s", addr.sin_addr);
-        printf("%s", addr.sin_port);
-        printf("%s", buffer);
-        printf("RECEIVED FROM %s %s: %s\n", addr.sin_addr.s_addr, addr.sin_port, buffer);
-    } 
+    else if (verbose) printf("RECEIVED FROM %u %s: %s\n", addr.sin_addr.s_addr, addr.sin_port, buffer);
 
     return code;
 }
