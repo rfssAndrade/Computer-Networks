@@ -116,10 +116,10 @@ void makeConnection() {
     n = getaddrinfo(NULL, ASport, &hints_tcp, &res_tcp);
     if (n != 0) exit(1);
 
-    if (bind(fd_udp, res_udp->ai_addr, res_udp->ai_addrlen) == -1) exit(1);
 
     if (bind(fd_tcp, res_tcp->ai_addr, res_tcp->ai_addrlen) == -1) exit(1);
     if (listen(fd_tcp, 20) == -1) exit(1); // what size?
+    if (bind(fd_udp, res_udp->ai_addr, res_udp->ai_addrlen) == -1) exit(1);
 
     while (1) {
         testfds = inputs;
