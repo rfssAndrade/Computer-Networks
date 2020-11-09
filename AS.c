@@ -16,6 +16,7 @@ int verbose = 0;
 
 
 void parseArgs(int argc, char **argv);
+void makeConnection();
 void closeFds(int size, int *fds, int fd_udp, int fd_tcp);
 int readMessageUdp(int fd, char *buffer, struct sockaddr_in addr);
 int parseMessage(char *buffer, char *message, char *operation, char *uid, char *third, char *fourth, char *fifth, struct sockaddr_in addr);
@@ -29,6 +30,7 @@ int main(int argc, char **argv) {
     ASport = malloc(6 * sizeof(char));
 
     parseArgs(argc, argv);
+    makeConnection();
 
     free(ASport);
 
