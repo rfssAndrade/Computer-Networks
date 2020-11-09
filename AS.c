@@ -280,7 +280,7 @@ int registerUser(char *uid, char *pass, char *PDIP, char *PDport, struct sockadd
     }
     fclose(fptr);
 
-    sprintf(path, "./USERS/%s/reg.txt", "w");
+    sprintf(path, "./USERS/%s/reg.txt", uid);
     fptr = fopen(path, "w");
     if (fptr == NULL) return NOK;
 
