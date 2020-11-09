@@ -194,7 +194,7 @@ int readMessageUdp(int fd, char *buffer, struct sockaddr_in addr) {
     else if (verbose) {
         inet_ntop(AF_INET, &addr.sin_addr, ip, sizeof(ip));
         port = ntohs(addr.sin_port);
-        printf("RECEIVED FROM %s %u: %s\n", ip, port, buffer);
+        printf("RECEIVED FROM %s %u: %s\n", ip, port, buffer); // ver \n
     }
     return code;
 }
@@ -318,8 +318,14 @@ int formatMessage(int codeOperation, int codeStatus, char *message) {
 void sendMessageUdp(int fd, char *message, int len, struct sockaddr_in addr) {
     int code;
     socklen_t addrlen = sizeof(addr);
+    char ip[INET_ADDRSTRLEN];
+    unsigned int port;
 
     code = sendto(fd, message, len, 0, (struct sockaddr *)&addr, addrlen);
     if (code == ERROR) puts("Error on send\n");
-    else if (verbose) printf("SENT TO %u %hu: %s\n", addr.sin_addr.s_addr, addr.sin_port, message);
+    else if (verbose) {
+        inet_ntop(AF_INET, &addr.sin_addr, ip, sizeof(ip));
+        port = ntohs(addr.sin_port);
+        printf("SENT TO %s %u: %s\n", ip, port, message);
+    }
 }
