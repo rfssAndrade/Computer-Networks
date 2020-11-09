@@ -144,7 +144,6 @@ void makeConnection() {
                     if (code == ERROR || (code == EXIT && !isRegistered)) break;
 
                     formatMessage(message, code, second, third);
-                    puts("CLIENT");
                     sendMessageClient(fd_client, message, res_as);
                 }
                 else if (FD_ISSET(fd_client, &testfds)) {
@@ -152,7 +151,6 @@ void makeConnection() {
                     verifyAnswer(answer);
                 }
                 else if (FD_ISSET(fd_server, &testfds)) {
-                    puts("HELLO Server");
                     readMessage(fd_server, answer, addr_server);
                     sscanf(answer, "%s %s", command, second);
                     if (verifyOperation(command) == VLC && strcmp(uid, second) == 0) {
