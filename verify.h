@@ -25,12 +25,14 @@
 #define EXIT 10
 
 
-// CODES PROTOCOLO
+// CODES PROTOCOL
 #define RAU 11
 #define RVC 12
 #define RLS 13
 #define RRT 14
 #define VLC 15
+#define VLD 16
+#define CNF 17
 
 
 // CODES COMMAND LINE
@@ -45,6 +47,20 @@
 // CODES ERROR
 #define ERROR -1
 #define SOCKET_ERROR -2
+
+
+// CODES STATUS
+#define OK 18
+#define NOK 19
+#define ERR 20
+#define ELOG 21
+#define EPD 22
+#define EUSER 23
+#define EFOP 24
+#define EOFILE 25
+#define INV 26
+#define DUP 27
+#define FULL 28
 
 
 

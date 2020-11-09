@@ -50,6 +50,8 @@ int verifyOperation(char *operation) {
     if (strcmp(operation, "RLS") == 0) return RLS;
     if (strcmp(operation, "RRT") == 0) return RRT;
     if (strcmp(operation, "VLC") == 0) return VLC;
+    if (strcmp(operation, "VLD") == 0) return VLD;
+    if (strcmp(operation, "CNF") == 0) return CNF;
 
     return ERROR;
 }

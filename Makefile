@@ -1,9 +1,9 @@
 CC = gcc
 CFLAGS = -g
 DEPS = verify.h
-SOURCES = pd.c user.c verify.c
+SOURCES = pd.c user.c verify.c AS.c
 OBJS = $(SOURCES:%.c=%.o)
-TARGETS = pd user
+TARGETS = pd user AS
 
 .PHONY: all clean
 
@@ -21,6 +21,13 @@ pd: verify.o pd.o
 verify.o: verify.c verify.h
 user.o: user.c verify.h
 user: verify.o user.o
+
+
+### AS ###
+verify.o: verify.c verify.h
+AS.o: AS.c verify.h
+AS: verify.o AS.o
+
 
 %.o:
 	$(CC) -c -o $@ $< $(CFLAGS)

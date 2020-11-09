@@ -118,7 +118,7 @@ void makeConnection() {
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
     
-    code = getaddrinfo(ASIP, ASport, &hints, &res_as);
+    n = getaddrinfo(ASIP, ASport, &hints, &res_as);
     if (code != 0) exit(1);
 
     n = getaddrinfo(FSIP, FSport, &hints, &res_fs);
