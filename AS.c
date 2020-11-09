@@ -244,7 +244,7 @@ int registerUser(char *uid, char *pass, char *PDIP, char *PDport, struct sockadd
     DIR *dUsers;
     struct dirent *dir;
     int code, nread, nwritten, len;
-    char path[16], buffer[128];
+    char path[32], buffer[128];
     FILE *fptr;
 
     if (verifyUid(uid) != 0 || verifyPass(pass) != 0 || verifyIp(PDIP) != 0 || verifyPort(PDport) != 0) return NOK;
@@ -260,7 +260,7 @@ int registerUser(char *uid, char *pass, char *PDIP, char *PDport, struct sockadd
     }
     closedir(dUsers);
 
-    memset(path, 0, sizeof(path));
+    //memset(path, 0, sizeof(path));
     sprintf(path, "./USERS/%s/pass.txt", uid);
     fptr = fopen(path, "r");
     if (fptr == NULL) {
@@ -281,8 +281,8 @@ int registerUser(char *uid, char *pass, char *PDIP, char *PDport, struct sockadd
     }
     fclose(fptr);
 
-    memset(path, 0, sizeof(path));
-    memset(buffer, 0, sizeof(buffer));
+    //memset(path, 0, sizeof(path));
+    //memset(buffer, 0, sizeof(buffer));
     sprintf(path, "./USERS/%s/reg.txt", uid);
     fptr = fopen(path, "w");
     if (fptr == NULL) return NOK;
