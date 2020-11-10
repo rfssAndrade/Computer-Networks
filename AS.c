@@ -182,6 +182,7 @@ void makeConnection() {
                             n = readMessageTcp(fds[i], buffer);
                             if (n == -1) break;
                             if (n == SOCKET_ERROR) {
+                                FD_CLR(fds[i]->fd, &inputs);
                                 close(fds[i]->fd);
                                 //erase some files
                                 free(fds[i]);
