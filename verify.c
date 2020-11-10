@@ -107,14 +107,14 @@ int verifyFname(char *fname) {
             printf("Invalid filename\n");
             return ERROR;
         }
-        *temp++;
+        temp++;
     }
 
-    *temp--;
+    temp--;
     while (*temp) {
         if (*temp == '.' || extension > EXTENSION_SIZE) break; //pode ter mais que um .?
         extension++;
-        *temp--;
+        temp--;
     }
 
     if (extension != EXTENSION_SIZE) {

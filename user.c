@@ -349,7 +349,9 @@ int readMessageAS(int fd, char *answer) {
         ptr += nread;
         if (*(ptr-1) == '\n') break;
     }
-    *(ptr++) = '\0';
+    *(ptr++) = '\0'; //rever isto
+    // ver tamanho buffer
+    // ver socket timeout
     return 0;
 }
 
