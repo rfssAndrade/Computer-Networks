@@ -85,7 +85,7 @@ void makeConnection() {
     fd_set inputs, testfds;
     struct sigaction action;
     pid_t pid;
-    int size = 20;
+    int size = 1; // mudar
     Sockinfo *fds = calloc(size, sizeof(struct sockinfo));
     int nextFreeEntry = 0;
     char buffer[128], message[128];
@@ -185,6 +185,7 @@ void makeConnection() {
                                 close(fds[i]->fd);
                                 //erase some files
                                 free(fds[i]);
+                                fds[i] = NULL;
                                 break;
                             }
                             if (n == -1 || n == SOCKET_ERROR) break;
@@ -425,7 +426,7 @@ int readMessageTcp(Sockinfo sockinfo, char *buffer) {
     if (verbose) {
         inet_ntop(AF_INET, &sockinfo->addr.sin_addr, ip, sizeof(ip));
         port = ntohs(sockinfo->addr.sin_port);
-        printf("SENT TO %s %u: %s\n", ip, port, buffer);
+        printf("RECEIVED FROM %s %u: %s\n", ip, port, buffer);
     }
 
     return 0;
@@ -513,9 +514,8 @@ Sockinfo createSockinfo(int fd, struct sockaddr_in addr) {
 
 
 int findNextFreeEntry(Sockinfo *fds, int size) {
-    for (int i = 1; i < size; i++) {
+    for (int i = 0; i < size; i++) {
         if (fds[i] == NULL) return i;
     }
-    puts("ERROR");
-    return ERROR;
+    return size;
 }
