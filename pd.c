@@ -161,7 +161,10 @@ void makeConnection() {
                         sprintf(message, "RVC %s NOK\n", uid);
                         printf("Bad message: %s\n", answer);
                     }
-                    sendMessageServer(fd_server, message, addr_server);
+                    addrlen = sizeof(addr_server);
+                    n = sendto(fd_server, message, strlen(message), 0, (struct sockaddr *)&addr_server, addrlen); //mudar
+                    if (n == ERROR) puts("ERROR");
+                    // sendMessageServer(fd_server, message, addr_server);
                 }
                 break;
         }
