@@ -15,6 +15,7 @@
 typedef struct sockinfo {
     int fd;
     struct sockaddr_in addr;
+    char *uid;
 } *Sockinfo;
 
 
@@ -184,7 +185,8 @@ void makeConnection() {
                             if (n == SOCKET_ERROR) {
                                 FD_CLR(fds[i]->fd, &inputs);
                                 close(fds[i]->fd);
-                                //erase some files
+                                if (fds[i]->uid != NULL) logoutUser(fds[i]->uid);
+                                free(fds[i]->uid);
                                 free(fds[i]);
                                 fds[i] = NULL;
                                 break;
@@ -210,6 +212,7 @@ void closeFds(int size, Sockinfo *fds, int fd_udp, int fd_tcp) {
     for (int i = 0; i < size; i++) {
         if (fds[i] != NULL) {
             close(fds[i]->fd);
+            free(fds[i]->uid);
             free(fds[i]);
         }
     }
@@ -313,6 +316,7 @@ int registerUser(char *uid, char *pass, char *PDIP, char *PDport) {
     }
     else {
         nread = fread(buffer, sizeof(char), 16, fptr);
+        buffer[nread] = '\0';
         if (strcmp(buffer, pass) != 0) {
             fclose(fptr);
             return NOK;
@@ -390,6 +394,7 @@ int unregisterUser(char *uid, char *pass) {
     if (fptr == NULL) return NOK;
 
     nread = fread(buffer, sizeof(char), 16, fptr);
+    buffer[nread] = '\0'; // need?
     if (strcmp(buffer, pass) != 0) {
         fclose(fptr);
         return NOK;
@@ -479,6 +484,7 @@ int loginUser(char *uid, char *pass, Sockinfo sockinfo) {
     if (fptr == NULL) return NOK;
 
     nread = fread(buffer, sizeof(char), 16, fptr); // ver nread
+    buffer[nread] = '\0';
     if (strcmp(buffer, pass) != 0) {
         fclose(fptr);
         return NOK;
@@ -500,6 +506,8 @@ int loginUser(char *uid, char *pass, Sockinfo sockinfo) {
     }
     fclose(fptr);
 
+    strcpy(sockinfo->uid, uid);
+
     return OK;
 }
 
@@ -509,6 +517,7 @@ Sockinfo createSockinfo(int fd, struct sockaddr_in addr) {
 
     new->fd = fd;
     memcpy(&new->addr, &addr, sizeof(addr));
+    new->uid = calloc(6, sizeof(char));
 
     return new;
 }
@@ -519,4 +528,14 @@ int findNextFreeEntry(Sockinfo *fds, int size) {
         if (fds[i] == NULL) return i;
     }
     return size;
+}
+
+
+void logoutUser(char *uid) {
+    char path[32];
+    FILE *fptr;
+    int nread;
+
+    sprintf(path, "./USERS/%s/login.txt");
+    if (remove(path) != 0) puts("ERROR on logout");
 }
