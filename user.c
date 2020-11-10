@@ -171,6 +171,7 @@ void makeConnection() {
             }
             else if (FD_ISSET(fd_as, &testfds)) {
                 code = readMessageAS(fd_as, answer);
+                if (code == SOCKET_ERROR) break;
                 if (verifyAnswerAS(answer) != 0) parseAnswerAS(answer, command, second);
             }
             else if (fd_fs != -1 && FD_ISSET(fd_fs, &testfds)) {
