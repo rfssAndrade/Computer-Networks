@@ -22,7 +22,7 @@ void makeConnection();
 int verifyAnswer(char *answer);
 void formatMessage(char *message, int code, char *second, char *third);
 void sendMessageClient(int fd, char *message, struct addrinfo *res);
-void readMessage(int fd, char *answer, struct sockaddr_in addr);
+void readMessage(int fd, char *answer, struct sockaddr_in *addr);
 void sendMessageServer(int fd, char *message, struct sockaddr_in addr);
 
 
@@ -147,11 +147,11 @@ void makeConnection() {
                     sendMessageClient(fd_client, message, res_as);
                 }
                 else if (FD_ISSET(fd_client, &testfds)) {
-                    readMessage(fd_client, answer, addr_client);
+                    readMessage(fd_client, answer, &addr_client);
                     verifyAnswer(answer);
                 }
                 else if (FD_ISSET(fd_server, &testfds)) {
-                    readMessage(fd_server, answer, addr_server);
+                    readMessage(fd_server, answer, &addr_server);
                     sscanf(answer, "%s %s", command, second);
                     if (verifyOperation(command) == VLC && strcmp(uid, second) == 0) {
                         sprintf(message, "RVC %s OK\n", uid);
@@ -231,7 +231,7 @@ void sendMessageClient(int fd, char *message, struct addrinfo *res) {
 }
 
 
-void readMessage(int fd, char *answer, struct sockaddr_in addr) {
+void readMessage(int fd, char *answer, struct sockaddr_in *addr) {
     int code;
     socklen_t addrlen = sizeof(addr);
 
