@@ -161,7 +161,12 @@ void makeConnection() {
                         sprintf(message, "RVC %s NOK\n", uid);
                         printf("Bad message: %s\n", answer);
                     }
-                    sendMessageServer(fd_server, message, addr_server);
+                        int code;
+    socklen_t addrlen = sizeof(addr);
+
+    code = sendto(fd_server, message, strlen(message), 0, (struct sockaddr *)&addr_server, addrlen); //mudar
+    if (code == ERROR) puts("ERROR");
+                    // sendMessageServer(fd_server, message, addr_server);
                 }
                 break;
         }
@@ -241,7 +246,7 @@ void sendMessageServer(int fd, char *message, struct sockaddr_in addr) {
     int code;
     socklen_t addrlen = sizeof(addr);
 
-    code = sendto(fd, message, strlen(message), 0, (struct sockaddr *)&addr, &addrlen); //mudar
+    code = sendto(fd, message, strlen(message), 0, (struct sockaddr *)&addr, addrlen); //mudar
     if (code == ERROR) puts("ERROR");
 }
 
