@@ -201,7 +201,7 @@ int readMessageUdp(int fd, char *buffer, struct sockaddr_in *addr) {
     char ip[INET_ADDRSTRLEN];
     unsigned int port;
 
-    code = recvfrom(fd, buffer, 127, 0, (struct sockaddr *)&addr, &addrlen);
+    code = recvfrom(fd, buffer, 127, 0, (struct sockaddr *)addr, &addrlen);
     if (code == ERROR) printf("Error on receive\n");
     else if (verbose) {
         inet_ntop(AF_INET, &addr->sin_addr, ip, sizeof(ip));
