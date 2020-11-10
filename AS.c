@@ -353,10 +353,10 @@ int unregisterUser(char *uid, char *pass) {
 
     nread = fread(buffer, sizeof(char), 16, fptr);
     if (strcmp(buffer, pass) != 0) {
-        close(fptr);
+        fclose(fptr);
         return NOK;
     }
-    close(fptr);
+    fclose(fptr);
 
     sprintf(path, "./USERS/%s/reg.txt", uid);
     if (remove(path) != 0) return NOK;
