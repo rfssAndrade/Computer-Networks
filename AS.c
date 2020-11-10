@@ -25,6 +25,7 @@ int formatMessage(int codeOperation, int codeStatus, char *message);
 void sendMessageUdp(int fd, char *message, int len, struct sockaddr_in addr);
 int searchDir(DIR *d, struct dirent *dir, char *uid);
 int registerUser(char *uid, char *pass, char *PDIP, char *PDport);
+int unregisterUser(char *uid, char *pass);
 
 
 int main(int argc, char **argv) {
