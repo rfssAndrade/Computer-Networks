@@ -219,8 +219,8 @@ int parseMessage(char *buffer, char *message, char *operation, char *uid, char *
             break;
         
         case EXIT:
-            //codeStatus = unregisterUser(uid, third);
-            //len = formatMessage(codeOperation, codeStatus, message);
+            codeStatus = unregisterUser(uid, third);
+            len = formatMessage(codeOperation, codeStatus, message);
             break;
         
         case RVC:
@@ -317,7 +317,12 @@ int formatMessage(int codeOperation, int codeStatus, char *message) {
             if (codeStatus == OK) len = sprintf(message, "RRG OK\n");
             else len = sprintf(message, "RRG NOK\n");
             break;
+        case EXIT:
+            if (codeStatus == OK) len = sprintf(message, "RUN OK\n");
+            else len = sprintf(message, "RUN NOK\n");
+            break;
     }
+    return len;
 }
 
 
@@ -337,4 +342,24 @@ void sendMessageUdp(int fd, char *message, int len, struct sockaddr_in addr) {
 }
 
 
-//int unregisterUser(char *uid, char *password)
+int unregisterUser(char *uid, char *pass) {
+    char path[32], buffer[16];
+    FILE *fptr;
+    int nread;
+
+    sprintf(path, "./USERS/%s/pass.txt", uid);
+    fptr = fopen(path, "r");
+    if (fptr == NULL) return NOK;
+
+    nread = fread(buffer, sizeof(char), 16, fptr);
+    if (strcmp(buffer, pass) != 0) {
+        close(fptr);
+        return NOK;
+    }
+    close(fptr);
+
+    sprintf(path, "./USERS/%s/reg.txt", uid);
+    if (remove(path) != 0) return NOK;
+
+    return OK;
+}
