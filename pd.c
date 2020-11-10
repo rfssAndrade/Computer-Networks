@@ -241,7 +241,7 @@ void sendMessageServer(int fd, char *message, struct sockaddr_in addr) {
     int code;
     socklen_t addrlen = sizeof(addr);
 
-    code = sendto(fd, message, strlen(message), 0, (struct sockaddr *)&addr, addrlen); //mudar
+    code = sendto(fd, message, strlen(message), 0, (struct sockaddr *)&addr, &addrlen); //mudar
     if (code == ERROR) puts("ERROR");
 }
 
