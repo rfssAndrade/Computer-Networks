@@ -24,7 +24,7 @@ int parseMessage(char *buffer, char *message, char *operation, char *uid, char *
 int formatMessage(int codeOperation, int codeStatus, char *message);
 void sendMessageUdp(int fd, char *message, int len, struct sockaddr_in addr);
 int searchDir(DIR *d, struct dirent *dir, char *uid);
-int registerUser(char *uid, char *pass, char *PDIP, char *PDport, struct sockaddr_in addr);
+int registerUser(char *uid, char *pass, char *PDIP, char *PDport);
 
 
 int main(int argc, char **argv) {
@@ -150,14 +150,7 @@ void makeConnection() {
                     n = readMessageUdp(fd_udp, buffer, &addr);
                     if (n == -1) break;
                     len = parseMessage(buffer, message, operation, uid, third, fourth, fifth, addr);
-                    //sendMessageUdp(fd_udp, message, len, addr);
-                    code = sendto(fd_udp, message, len, 0, (struct sockaddr *)&addr, addrlen);
-                    if (code == ERROR) puts("Error on send\n");
-                    else if (verbose) {
-                        inet_ntop(AF_INET, &addr.sin_addr, ip, sizeof(ip));
-                        port = ntohs(addr.sin_port);
-                        printf("SENT TO %s %u: %s\n", ip, port, message);
-                    }
+                    sendMessageUdp(fd_udp, message, len, addr);
                 }
                 else if (FD_ISSET(fd_tcp, &testfds)) {
                     addrlen = sizeof(addr);
@@ -221,12 +214,13 @@ int parseMessage(char *buffer, char *message, char *operation, char *uid, char *
 
     switch (codeOperation) {
         case REG:
-            codeStatus = registerUser(uid, third, fourth, fifth, addr);
+            codeStatus = registerUser(uid, third, fourth, fifth);
             len = formatMessage(codeOperation, codeStatus, message);
             break;
         
         case EXIT:
-            //codeStatus = unregisterUser(uid, third, addr);
+            //codeStatus = unregisterUser(uid, third);
+            //len = formatMessage(codeOperation, codeStatus, message);
             break;
         
         case RVC:
@@ -252,7 +246,7 @@ int parseMessage(char *buffer, char *message, char *operation, char *uid, char *
 }
 
 
-int registerUser(char *uid, char *pass, char *PDIP, char *PDport, struct sockaddr_in addr) {
+int registerUser(char *uid, char *pass, char *PDIP, char *PDport) {
     DIR *dUsers;
     struct dirent *dir;
     int code, nread, nwritten, len;
@@ -272,7 +266,6 @@ int registerUser(char *uid, char *pass, char *PDIP, char *PDport, struct sockadd
     }
     closedir(dUsers);
 
-    //memset(path, 0, sizeof(path));
     sprintf(path, "./USERS/%s/pass.txt", uid);
     fptr = fopen(path, "r");
     if (fptr == NULL) {
@@ -293,8 +286,6 @@ int registerUser(char *uid, char *pass, char *PDIP, char *PDport, struct sockadd
     }
     fclose(fptr);
 
-    //memset(path, 0, sizeof(path));
-    //memset(buffer, 0, sizeof(buffer));
     sprintf(path, "./USERS/%s/reg.txt", uid);
     fptr = fopen(path, "w");
     if (fptr == NULL) return NOK;
@@ -344,3 +335,6 @@ void sendMessageUdp(int fd, char *message, int len, struct sockaddr_in addr) {
         printf("SENT TO %s %u: %s\n", ip, port, message);
     }
 }
+
+
+//int unregisterUser(char *uid, char *password)
