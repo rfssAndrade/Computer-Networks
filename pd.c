@@ -162,7 +162,7 @@ void makeConnection() {
                         printf("Bad message: %s\n", answer);
                     }
                         int code;
-    socklen_t addrlen = sizeof(addr);
+    socklen_t addrlen = sizeof(addr_server);
 
     code = sendto(fd_server, message, strlen(message), 0, (struct sockaddr *)&addr_server, addrlen); //mudar
     if (code == ERROR) puts("ERROR");
