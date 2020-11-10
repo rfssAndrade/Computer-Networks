@@ -27,7 +27,7 @@ void parseArgs(int argc, char **argv);
 void makeConnection();
 void closeFds(int size, Sockinfo *fds, int fd_udp, int fd_tcp);
 int readMessageUdp(int fd, char *buffer, struct sockaddr_in *addr);
-int parseMessage(char *buffer, char *message, char *operation, char *uid, char *third, char *fourth, char *fifth, Sockinfo sockinfo);
+int parseMessage(char *buffer, Sockinfo sockinfo, int fd_udp, struct sockaddr_in addr);
 int formatMessage(int codeOperation, int codeStatus, char *message);
 void sendMessageUdp(int fd, char *message, int len, struct sockaddr_in addr);
 int searchDir(DIR *d, struct dirent *dir, char *uid);
@@ -38,6 +38,8 @@ int readMessageTcp(Sockinfo sockinfo, char *buffer);
 Sockinfo createSockinfo(int fd, struct sockaddr_in addr);
 int findNextFreeEntry(Sockinfo *fds, int size);
 int loginUser(char *uid, char *pass, Sockinfo sockinfo);
+int approveRequest(char *uid, char *third, char *fourth, char *fifth, struct sockaddr_in *addr);
+void logoutUser(char *uid);
 
 
 int main(int argc, char **argv) {
@@ -89,9 +91,8 @@ void makeConnection() {
     int size = 1; // mudar
     Sockinfo *fds = calloc(size, sizeof(struct sockinfo));
     int nextFreeEntry = 0;
-    char buffer[128], message[128];
-    char operation[4], uid[6], third[9], fourth[16], fifth[26];
     int code, len;
+    char buffer[128];
     DIR *d;
 
     if ((d = opendir("USERS")) == NULL) {
@@ -148,20 +149,12 @@ void makeConnection() {
                 perror("select");
                 exit(1);
             
-            default:
+            default:    
                 memset(buffer, 0, sizeof(buffer));
-                memset(message, 0, sizeof(message));
-                memset(operation, 0, sizeof(operation));
-                memset(uid, 0, sizeof(uid));
-                memset(third, 0, sizeof(third));
-                memset(fourth, 0, sizeof(fourth));
-                memset(fifth, 0, sizeof(fifth));
-                
                 if (FD_ISSET(fd_udp, &testfds)) {
                     n = readMessageUdp(fd_udp, buffer, &addr);
                     if (n == -1) break;
-                    len = parseMessage(buffer, message, operation, uid, third, fourth, fifth, NULL); // tirar addr
-                    sendMessageUdp(fd_udp, message, len, addr);
+                    len = parseMessage(buffer, NULL, fd_udp, addr);
                 }
                 else if (FD_ISSET(fd_tcp, &testfds)) {
                     addrlen = sizeof(addr);
@@ -192,8 +185,7 @@ void makeConnection() {
                                 break;
                             }
                             if (n == -1 || n == SOCKET_ERROR) break;
-                            len = parseMessage(buffer, message, operation, uid, third, fourth, fifth, fds[i]);
-                            sendMessageTcp(fds[i], message, len);
+                            len = parseMessage(buffer, fds[i], -1, addr);
                             break;
                         }
                     }
@@ -239,8 +231,9 @@ int readMessageUdp(int fd, char *buffer, struct sockaddr_in *addr) {
 }
 
 
-int parseMessage(char *buffer, char *message, char *operation, char *uid, char *third, char *fourth, char *fifth, Sockinfo sockinfo) {
+int parseMessage(char *buffer, Sockinfo sockinfo, int fd_udp, struct sockaddr_in addr) {
     int codeOperation, codeStatus, len;
+    char message[128], operation[4], uid[6], third[9], fourth[16], fifth[26];
 
     sscanf(buffer, "%s %s %s %s %s", operation, uid, third, fourth, fifth);
 
@@ -250,11 +243,13 @@ int parseMessage(char *buffer, char *message, char *operation, char *uid, char *
         case REG:
             codeStatus = registerUser(uid, third, fourth, fifth);
             len = formatMessage(codeOperation, codeStatus, message);
+            sendMessageUdp(fd_udp, message, len, addr);
             break;
         
         case EXIT:
             codeStatus = unregisterUser(uid, third);
             len = formatMessage(codeOperation, codeStatus, message);
+            sendMessageUdp(fd_udp, message, len, addr);
             break;
         
         case RVC:
@@ -263,9 +258,13 @@ int parseMessage(char *buffer, char *message, char *operation, char *uid, char *
         case LOGIN:
             codeStatus = loginUser(uid, third, sockinfo);
             len = formatMessage(codeOperation, codeStatus, message);
+            sendMessageTcp(sockinfo, message, len);
             break;
 
         case REQ:
+            codeStatus = approveRequest(uid, third, fourth, fifth, &addr);
+            len = formatMessage(codeOperation, codeStatus, message);
+            sendMessageUdp(fd_udp, message, len, addr);
             break;
 
         case VAL:
@@ -359,10 +358,22 @@ int formatMessage(int codeOperation, int codeStatus, char *message) {
             if (codeStatus == OK) len = sprintf(message, "RUN OK\n");
             else len = sprintf(message, "RUN NOK\n");
             break;
+        case REQ:
+            //len = sprintf(message, "VLC %s %04d %s")
+            break;
         case LOGIN:
             if (codeStatus == OK) len = sprintf(message, "RLO OK\n");
             else if (codeStatus == NOK) len = sprintf(message, "RLO NOK\n");
             else len = sprintf(message, "RLO ERR\n");
+            break;
+        case RVC:
+            if (codeStatus == OK) len = sprintf(message, "RRQ OK\n");
+            else if (codeStatus == ELOG) len = sprintf(message, "RRQ ELOG\n");
+            else if (codeStatus == EPD) len = sprintf(message, "RRQ EPD\n");
+            else if (codeStatus == EUSER) len = sprintf(message, "RRQ EUSER\n");
+            else if (codeStatus == EFOP) len = sprintf(message, "RRQ EFOP\n");
+            else len = sprintf(message, "RRQ ERR\n");
+            break;
     }
     return len;
 }
@@ -495,10 +506,10 @@ int loginUser(char *uid, char *pass, Sockinfo sockinfo) {
     fptr = fopen(path, "w");
     if (fptr == NULL) return ERR;
     
-    inet_ntop(AF_INET, &sockinfo->addr.sin_addr, ip, sizeof(ip));
-    port = ntohs(sockinfo->addr.sin_port);
+    //inet_ntop(AF_INET, &sockinfo->addr.sin_addr, ip, sizeof(ip));
+    //port = ntohs(sockinfo->addr.sin_port);
 
-    len = sprintf(buffer, "%s %u", ip, port);
+    len = sprintf(buffer, "%d", sockinfo->fd);
     nwritten = fwrite(buffer, sizeof(char), len, fptr);
     if (nwritten != len) {
         fclose(fptr);
@@ -536,6 +547,11 @@ void logoutUser(char *uid) {
     FILE *fptr;
     int nread;
 
-    sprintf(path, "./USERS/%s/login.txt");
+    sprintf(path, "./USERS/%s/login.txt", uid);
     if (remove(path) != 0) puts("ERROR on logout");
+}
+
+
+int approveRequest(char *uid, char *third, char *fourth, char *fifth, struct sockaddr_in *addr) {
+    return 1;
 }
