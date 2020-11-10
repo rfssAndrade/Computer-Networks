@@ -24,6 +24,7 @@ void formatMessage(char *message, int code, char *second, char *third);
 void sendMessageClient(int fd, char *message, struct addrinfo *res);
 void readMessage(int fd, char *answer, struct sockaddr_in *addr);
 void sendMessageServer(int fd, char *message, struct sockaddr_in addr);
+void parseMessage(char *answer, char *message, char *command, char *second);
 
 
 int main(int argc, char **argv) {
@@ -152,19 +153,8 @@ void makeConnection() {
                 }
                 else if (FD_ISSET(fd_server, &testfds)) {
                     readMessage(fd_server, answer, &addr_server);
-                    sscanf(answer, "%s %s", command, second);
-                    if (verifyOperation(command) == VLC && strcmp(uid, second) == 0) {
-                        sprintf(message, "RVC %s OK\n", uid);
-                        printf("%s", answer);
-                    }
-                    else {
-                        sprintf(message, "RVC %s NOK\n", uid);
-                        printf("Bad message: %s\n", answer);
-                    }
-                    addrlen = sizeof(addr_server);
-                    n = sendto(fd_server, message, strlen(message), 0, (struct sockaddr *)&addr_server, addrlen); //mudar
-                    if (n == ERROR) puts("ERROR");
-                    // sendMessageServer(fd_server, message, addr_server);
+                    parseMessage(answer, message, command, second);
+                    sendMessageServer(fd_server, message, addr_server);
                 }
                 break;
         }
@@ -265,4 +255,17 @@ int verifyAnswer(char *answer) {
     else printf("ERROR: %s", answer);
 
     return 0;
+}
+
+
+void parseMessage(char *answer, char *message, char *command, char *second) {
+    sscanf(answer, "%s %s", command, second);
+        if (verifyOperation(command) == VLC && strcmp(uid, second) == 0) {
+            sprintf(message, "RVC %s OK\n", uid);
+            printf("%s", answer);
+        }
+        else {
+            sprintf(message, "RVC %s NOK\n", uid);
+            printf("Bad message: %s\n", answer);
+        }
 }
