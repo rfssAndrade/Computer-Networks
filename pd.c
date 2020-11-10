@@ -235,7 +235,7 @@ void readMessage(int fd, char *answer, struct sockaddr_in *addr) {
     int code;
     socklen_t addrlen = sizeof(addr);
 
-    code = recvfrom(fd, answer, 128, 0, (struct sockaddr *)&addr, &addrlen);
+    code = recvfrom(fd, answer, 128, 0, (struct sockaddr *)addr, &addrlen);
     if (code == ERROR) puts("ERROR");
 }
 
