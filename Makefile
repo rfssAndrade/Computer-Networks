@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -g
 DEPS = verify.h
-SOURCES = pd.c user.c verify.c AS.c sockinfo.c
+SOURCES = pd.c user.c verify.c AS.c sockinfo.c message.c
 OBJS = $(SOURCES:%.c=%.o)
 TARGETS = pd user AS
 
