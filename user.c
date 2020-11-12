@@ -420,6 +420,7 @@ int parseAnswerFS(char *operation, int code, int fd) {
     nread = readTcp(fd, 3, ptr); // read status
     if (nread <= 0) return nread;
     ptr += nread;
+    *ptr = '\0';
 
     switch (code) {
         case RLS:
@@ -450,6 +451,7 @@ int parseAnswerFS(char *operation, int code, int fd) {
                 nread  = readTcp(fd, 2, ptr);
                 if (nread <= 0) return nread;
                 ptr += nread;
+                *ptr = '\0';
 
                 if (sprintf(buffer, "%s%s", operation, status) != 8) code = ERROR;
                 else verifyAnswerFS(buffer);
@@ -503,6 +505,7 @@ int parseAnswerFS(char *operation, int code, int fd) {
                 nread  = readTcp(fd, 2, ptr);
                 if (nread <= 0) return nread;
                 ptr += nread;
+                *ptr = '\0';
 
                 if (sprintf(buffer, "%s%s", operation, status) != 8) code = ERROR;
                 else verifyAnswerFS(buffer);
