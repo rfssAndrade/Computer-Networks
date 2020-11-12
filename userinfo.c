@@ -5,7 +5,7 @@
 #include "userinfo.h"
 
 
-userinfo createSockinfo(int fd, struct sockaddr_in addr) {
+userinfo createUserinfo(int fd, struct sockaddr_in addr) {
     userinfo new = malloc(sizeof(struct userinfo));
 
     new->fd = fd;

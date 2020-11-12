@@ -497,7 +497,7 @@ int parseAnswerFS(char *operation, int code, int fd) {
                     ptr = buffer;
                     fptr = fopen(fname, "wb");
                     if (fptr == NULL) {
-                        printf("Error creating file %s\n", fname); // what happens if file already exists?
+                        printf("Error creating file %s\n", fname);
                         return ERROR;
                     }
                     while (fSize > 0) {

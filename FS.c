@@ -22,6 +22,10 @@ int verbose = 0;
 
 void parseArgs(int argc, char **argv);
 void makeConnection();
+int parseMessageUser(char *buffer, char *message);
+void parseMessageAS(char *buffer, char *message, userinfo *fds, int size);
+int fopCode(char *fop);
+int findUser(userinfo *fds, char *uid, int size);
 
 
 int main(int argc, char **argv) {
@@ -144,8 +148,6 @@ void makeConnection() {
 
             default:
                 if (FD_ISSET(fd_udp, &testfds)) {
-                    n = readMessageUdp(fd_udp, buffer, &addr);
-                    if (n == -1) break;
                     addrlen = sizeof(addr);
                     n = recvfrom(fd_udp, buffer, 128, 0, (struct sockaddr *)&addr, &addrlen);
                     if (n == ERROR) puts("ERROR");
@@ -157,7 +159,7 @@ void makeConnection() {
                     new_fd = accept(fd_tcp, (struct sockaddr *)&addr, &addrlen);
                     if (new_fd == ERROR) exit(1); //mudar
                     FD_SET(new_fd, &inputs);
-                    fds[nextFreeEntry] = createSockinfo(new_fd, addr);
+                    fds[nextFreeEntry] = createUserinfo(new_fd, addr);
                     nextFreeEntry = findNextFreeEntry(fds, size);
                     if (nextFreeEntry == size) {
                         fds = realloc(fds, (size * 2) * sizeof(userinfo));
@@ -169,7 +171,7 @@ void makeConnection() {
                 else {
                     for (int i = 0; i < size; i++) {
                         if (fds[i]->fd != 0 && FD_ISSET(fds[i]->fd, &testfds)) {
-                            n = readTcp(fds[i], 12, buffer);
+                            n = readTcp(fds[i]->fd, 12, buffer);
 
                             if (n == -1) break;
                             if (n == SOCKET_ERROR) {
@@ -210,9 +212,9 @@ void makeConnection() {
 
 int parseMessageUser(char *buffer, char *message) {
     int code, len;
-    char message[128], operation[4], uid[8], tid[8];
+    char  operation[4], uid[8], tid[8];
 
-    ssacnf(buffer, "%s %s %s", operation, uid, tid);
+    sscanf(buffer, "%s %s %s", operation, uid, tid);
     code = verifyOperation(operation);
 
     switch (code) {
@@ -222,15 +224,15 @@ int parseMessageUser(char *buffer, char *message) {
             break;
         case RETRIEVE:
             if (verifyUid(uid) != 0 || verifyTid(tid) != 0) len = sprintf(message, "RRT ERR\n");
-            else len = sprintf(message, "VLD %s %s %s\n", uid, tid);
+            else len = sprintf(message, "VLD %s %s\n", uid, tid);
             break;
         case UPLOAD:
             if (verifyUid(uid) != 0 || verifyTid(tid) != 0) len = sprintf(message, "RUP ERR\n");
-            else len = sprintf(message, "VLD %s %s %s %s\n", uid, tid);
+            else len = sprintf(message, "VLD %s %s\n", uid, tid);
             break;
         case DELETE:
             if (verifyUid(uid) != 0 || verifyTid(tid) != 0) len = sprintf(message, "DEL ERR\n");
-            else len = sprintf(message, "VLD %s %s %s\n", uid, tid);
+            else len = sprintf(message, "VLD %s %s\n", uid, tid);
             break;
         case REMOVE:
             if (verifyUid(uid) != 0 || verifyTid(tid) != 0) len = sprintf(message, "REM ERR\n");
@@ -246,12 +248,12 @@ int parseMessageUser(char *buffer, char *message) {
 
 void parseMessageAS(char *buffer, char *message, userinfo *fds, int size) {
     int code, fd;
-    char message[128], operation[4], uid[6], third[9], fourth[16], fifth[26];
+    char operation[4], uid[6], third[9], fourth[16], fifth[26];
 
     sscanf(buffer, "%s %s %s %s %s", operation, uid, third, fourth, fifth);
 
     code = verifyOperation(operation);
-    if (code != CNF || verifyUid(uid) != 0 || verifyTid(third) != 0 || verifyFop(fourth, fifth) != 0) return ERROR;
+    if (code != CNF || verifyUid(uid) != 0 || verifyTid(third) != 0 || verifyFop(fourth, fifth) != 0) return;
 
     fd = findUser(fds, uid, size);
 
@@ -259,6 +261,7 @@ void parseMessageAS(char *buffer, char *message, userinfo *fds, int size) {
 
     switch (code) {
         case LIST:
+            //list(fd);
             break;
         case RETRIEVE:
             break;
@@ -271,6 +274,7 @@ void parseMessageAS(char *buffer, char *message, userinfo *fds, int size) {
         case INV:
             break;
     }
+    printf("%s", buffer);
 }
 
 
