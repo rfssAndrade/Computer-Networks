@@ -107,9 +107,18 @@ void makeConnection() {
     char buffer[128];
     char command[16], second[32], third[32], answer[128], message[128];
     fd_set inputs, testfds;
+    struct timeval tv_as, tv_fs;
+
+    tv_as.tv_sec = 1;
+    tv_as.tv_usec = 0;
+
+    tv_fs.tv_sec = 1;
+    tv_fs.tv_usec = 0;
 
     fd_as = socket(AF_INET, SOCK_STREAM, 0);
     if (fd_as == -1) exit(1);
+
+    setsockopt(fd_as, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv_as, sizeof tv_as);
 
     FD_ZERO(&inputs);
     FD_SET(0, &inputs);
@@ -158,6 +167,8 @@ void makeConnection() {
 
                     fd_fs = socket(AF_INET, SOCK_STREAM, 0);
                     if (fd_fs == -1) exit(1);
+
+                    setsockopt(fd_fs, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv_fs, sizeof tv_fs);
 
                     n = connect(fd_fs, res_fs->ai_addr, res_fs->ai_addrlen);
                     if (n == -1) exit(1);
@@ -325,23 +336,12 @@ int readMessageFS(int fd) {
 int readMessageAS(int fd, char *answer) {
     char *ptr = answer;
     int nread;
-    // um bocado martelado ver melhor
-    // while (*ptr != '\n') { // se o servidor não cumprir o protocolo isto não vai funcionar
-    //     nread = read(fd, ptr, 127); //change size
-    //     if (nread == -1) puts("ERROR ON READ");
-    //     else if(nread == 0) {
-    //         printf("Server closed socket\n");
-    //         return SOCKET_ERROR;
-    //     }
-    //     ptr += nread;
-    //     if (*(ptr-1) == '\n') break;
-    // }
+
     nread = readTcp(fd, 127, ptr);
     if (nread <= 0) return nread;
     ptr += nread;
-    *ptr = '\0'; //rever isto
-    // ver tamanho buffer
-    // ver socket timeout
+    *ptr = '\0';
+
     return 0;
 }
 
@@ -477,7 +477,7 @@ int parseAnswerFS(char *operation, int code, int fd) {
                 if (fSize == 0 || fSize > 999999999) printf("Invalid fSize: %d\n", fSize);
                 else {
                     ptr = buffer;
-                    fptr = fopen(fname, "w");
+                    fptr = fopen(fname, "wb");
                     if (fptr == NULL) {
                         printf("Error creating file %s\n", fname); // what happens if file already exists?
                         return ERROR;
