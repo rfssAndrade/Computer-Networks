@@ -10,7 +10,7 @@
 #include <dirent.h>
 #include <arpa/inet.h>
 #include "verify.h"
-#include "sockinfo.h"
+#include "userinfo.h"
 
 
 char * ASport = NULL;
@@ -19,17 +19,17 @@ int verbose = 0;
 
 void parseArgs(int argc, char **argv);
 void makeConnection();
-void closeFds(int size, Sockinfo *fds, int fd_udp, int fd_tcp);
+void closeFds(int size, userinfo *fds, int fd_udp, int fd_tcp);
 int readMessageUdp(int fd, char *buffer, struct sockaddr_in *addr);
-int parseMessage(char *buffer, Sockinfo sockinfo, int fd_udp, struct sockaddr_in addr);
+int parseMessage(char *buffer, userinfo userinfo, int fd_udp, struct sockaddr_in addr);
 int formatMessage(int codeOperation, int codeStatus, char *message);
 void sendMessageUdp(int fd, char *message, int len, struct sockaddr_in addr);
 int searchDir(DIR *d, struct dirent *dir, char *uid);
 int registerUser(char *uid, char *pass, char *PDIP, char *PDport);
 int unregisterUser(char *uid, char *pass);
-void sendMessageTcp(Sockinfo sockinfo, char *message, int len);
-int readMessageTcp(Sockinfo sockinfo, char *buffer);
-int loginUser(char *uid, char *pass, Sockinfo sockinfo);
+void sendMessageTcp(userinfo userinfo, char *message, int len);
+int readMessageTcp(userinfo userinfo, char *buffer);
+int loginUser(char *uid, char *pass, userinfo userinfo);
 int approveRequest(char *uid, char *third, char *fourth, char *fifth, int *vc, struct sockaddr_in *addr);
 void logoutUser(char *uid);
 
@@ -80,7 +80,7 @@ void makeConnection() {
     fd_set inputs, testfds;
     struct sigaction action;
     int size = 1; // mudar
-    Sockinfo *fds = calloc(size, sizeof(struct sockinfo));
+    userinfo *fds = calloc(size, sizeof(struct userinfo));
     int nextFreeEntry = 0;
     int code, len;
     char buffer[128];
@@ -156,7 +156,7 @@ void makeConnection() {
                     fds[nextFreeEntry] = createSockinfo(new_fd, addr);
                     nextFreeEntry = findNextFreeEntry(fds, size);
                     if (nextFreeEntry == size) {
-                        fds = realloc(fds, (size * 2) * sizeof(Sockinfo));
+                        fds = realloc(fds, (size * 2) * sizeof(userinfo));
                         for (int i = size; i < size * 2; i++) fds[i] = NULL;
                         size *= 2;
                     }
@@ -208,7 +208,7 @@ int readMessageUdp(int fd, char *buffer, struct sockaddr_in *addr) {
 }
 
 
-int parseMessage(char *buffer, Sockinfo sockinfo, int fd_udp, struct sockaddr_in addr) {
+int parseMessage(char *buffer, userinfo userinfo, int fd_udp, struct sockaddr_in addr) {
     int codeOperation, codeStatus, len, *vc = -1;
     char message[128], operation[4], uid[6], third[9], fourth[16], fifth[26];
 
@@ -233,9 +233,9 @@ int parseMessage(char *buffer, Sockinfo sockinfo, int fd_udp, struct sockaddr_in
             break;
 
         case LOGIN:
-            codeStatus = loginUser(uid, third, sockinfo);
+            codeStatus = loginUser(uid, third, userinfo);
             len = formatMessage(codeOperation, codeStatus, message);
-            sendMessageTcp(sockinfo, message, len);
+            sendMessageTcp(userinfo, message, len);
             break;
 
         case REQ:
@@ -397,14 +397,14 @@ int unregisterUser(char *uid, char *pass) {
 }
 
 
-int readMessageTcp(Sockinfo sockinfo, char *buffer) {
+int readMessageTcp(userinfo userinfo, char *buffer) {
     char *ptr = buffer;
     int nread;
     char ip[INET_ADDRSTRLEN];
     unsigned int port;
 
     while (1) {
-        nread = read(sockinfo->fd, ptr, 127);
+        nread = read(userinfo->fd, ptr, 127);
         if (nread == -1) {
             puts("ERROR ON READ");
             return ERROR;
@@ -419,8 +419,8 @@ int readMessageTcp(Sockinfo sockinfo, char *buffer) {
     *ptr = '\0';
 
     if (verbose) {
-        inet_ntop(AF_INET, &sockinfo->addr.sin_addr, ip, sizeof(ip));
-        port = ntohs(sockinfo->addr.sin_port);
+        inet_ntop(AF_INET, &userinfo->addr.sin_addr, ip, sizeof(ip));
+        port = ntohs(userinfo->addr.sin_port);
         printf("RECEIVED FROM %s %u: %s\n", ip, port, buffer);
     }
 
@@ -428,14 +428,14 @@ int readMessageTcp(Sockinfo sockinfo, char *buffer) {
 }
 
 
-void sendMessageTcp(Sockinfo sockinfo, char *message, int len) {
+void sendMessageTcp(userinfo userinfo, char *message, int len) {
     int nwritten;
     char *ptr = message;
     char ip[INET_ADDRSTRLEN];
     unsigned int port;
 
     while (len > 0) {
-        nwritten = write(sockinfo->fd, ptr, len);
+        nwritten = write(userinfo->fd, ptr, len);
         if (nwritten <= 0) {
             puts("ERROR ON SEND");
             break;
@@ -444,14 +444,14 @@ void sendMessageTcp(Sockinfo sockinfo, char *message, int len) {
         ptr += nwritten;
     }
     if (verbose) {
-        inet_ntop(AF_INET, &sockinfo->addr.sin_addr, ip, sizeof(ip));
-        port = ntohs(sockinfo->addr.sin_port);
+        inet_ntop(AF_INET, &userinfo->addr.sin_addr, ip, sizeof(ip));
+        port = ntohs(userinfo->addr.sin_port);
         printf("SENT TO %s %u: %s\n", ip, port, message);
     }
 }
 
 
-int loginUser(char *uid, char *pass, Sockinfo sockinfo) {
+int loginUser(char *uid, char *pass, userinfo userinfo) {
     char path[32], buffer[16];
     FILE *fptr;
     int nread, nwritten, len;
@@ -484,10 +484,10 @@ int loginUser(char *uid, char *pass, Sockinfo sockinfo) {
     fptr = fopen(path, "w");
     if (fptr == NULL) return ERR;
     
-    //inet_ntop(AF_INET, &sockinfo->addr.sin_addr, ip, sizeof(ip));
-    //port = ntohs(sockinfo->addr.sin_port);
+    //inet_ntop(AF_INET, &userinfo->addr.sin_addr, ip, sizeof(ip));
+    //port = ntohs(userinfo->addr.sin_port);
 
-    len = sprintf(buffer, "%d", sockinfo->fd);
+    len = sprintf(buffer, "%d", userinfo->fd);
     nwritten = fwrite(buffer, sizeof(char), len, fptr);
     if (nwritten != len) {
         fclose(fptr);
@@ -495,7 +495,7 @@ int loginUser(char *uid, char *pass, Sockinfo sockinfo) {
     }
     fclose(fptr);
 
-    strcpy(sockinfo->uid, uid);
+    strcpy(userinfo->uid, uid);
 
     return OK;
 }

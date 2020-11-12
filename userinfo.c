@@ -2,11 +2,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#include "sockinfo.h"
+#include "userinfo.h"
 
 
-Sockinfo createSockinfo(int fd, struct sockaddr_in addr) {
-    Sockinfo new = malloc(sizeof(struct sockinfo));
+userinfo createSockinfo(int fd, struct sockaddr_in addr) {
+    userinfo new = malloc(sizeof(struct userinfo));
 
     new->fd = fd;
     memcpy(&new->addr, &addr, sizeof(addr));
@@ -16,7 +16,7 @@ Sockinfo createSockinfo(int fd, struct sockaddr_in addr) {
 }
 
 
-int findNextFreeEntry(Sockinfo *fds, int size) {
+int findNextFreeEntry(userinfo *fds, int size) {
     for (int i = 0; i < size; i++) {
         if (fds[i] == NULL) return i;
     }
@@ -24,7 +24,7 @@ int findNextFreeEntry(Sockinfo *fds, int size) {
 }
 
 
-void closeFds(int size, Sockinfo *fds, int fd_udp, int fd_tcp) {
+void closeFds(int size, userinfo *fds, int fd_udp, int fd_tcp) {
     for (int i = 0; i < size; i++) {
         if (fds[i] != NULL) {
             close(fds[i]->fd);

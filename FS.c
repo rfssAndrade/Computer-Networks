@@ -10,7 +10,8 @@
 #include <dirent.h>
 #include <arpa/inet.h>
 #include "verify.h"
-#include "sockinfo.h"
+#include "userinfo.h"
+#include "message.h"
 
 
 char *FSport = NULL;
@@ -84,9 +85,11 @@ void makeConnection() {
     fd_set inputs, testfds;
     struct sigaction action;
     int size = 1; // mudar
-    Sockinfo *fds = calloc(size, sizeof(struct sockinfo));
+    userinfo *fds = calloc(size, sizeof(struct userinfo));
     int nextFreeEntry = 0;
     DIR *d;
+    char buffer[128], message[128];
+    int len, code;
 
     if ((d = opendir("USERSF")) == NULL) {
         n = mkdir("USERSF", 0777);
@@ -141,7 +144,12 @@ void makeConnection() {
 
             default:
                 if (FD_ISSET(fd_udp, &testfds)) {
-                    ;
+                    n = readMessageUdp(fd_udp, buffer, &addr);
+                    if (n == -1) break;
+                    addrlen = sizeof(addr);
+                    n = recvfrom(fd_udp, buffer, 128, 0, (struct sockaddr *)&addr, &addrlen);
+                    if (n == ERROR) puts("ERROR");
+                    parseMessageAS(buffer, message, fds, size);
                 }
                 
                 else if (FD_ISSET(fd_tcp, &testfds)) {
@@ -152,7 +160,7 @@ void makeConnection() {
                     fds[nextFreeEntry] = createSockinfo(new_fd, addr);
                     nextFreeEntry = findNextFreeEntry(fds, size);
                     if (nextFreeEntry == size) {
-                        fds = realloc(fds, (size * 2) * sizeof(Sockinfo));
+                        fds = realloc(fds, (size * 2) * sizeof(userinfo));
                         for (int i = size; i < size * 2; i++) fds[i] = NULL;
                         size *= 2;
                     }
@@ -161,19 +169,31 @@ void makeConnection() {
                 else {
                     for (int i = 0; i < size; i++) {
                         if (fds[i]->fd != 0 && FD_ISSET(fds[i]->fd, &testfds)) {
-                            //n = readMessageTcp(fds[i], buffer);
+                            n = readTcp(fds[i], 12, buffer);
+
                             if (n == -1) break;
                             if (n == SOCKET_ERROR) {
                                 FD_CLR(fds[i]->fd, &inputs);
                                 close(fds[i]->fd);
-                                if (fds[i]->uid != NULL) logoutUser(fds[i]->uid); //mudar
                                 free(fds[i]->uid);
                                 free(fds[i]);
                                 fds[i] = NULL;
                                 break;
                             }
-                            if (n == -1 || n == SOCKET_ERROR) break;
-                            //len = parseMessage(buffer, fds[i], -1, addr);
+
+                            len = parseMessageUser(buffer, message);
+                            if (len > 8) {
+                                code = sendto(fd_udp, message, strlen(message), 0, res_udp->ai_addr, res_udp->ai_addrlen); //mudar
+                                if (code == ERROR) puts("ERROR");
+                            }
+                            else writeTcp(fds[i]->fd, len, message);
+
+                            FD_CLR(fds[i]->fd, &inputs);
+                            close(fds[i]->fd);
+                            free(fds[i]->uid);
+                            free(fds[i]);
+                            fds[i] = NULL;
+
                             break;
                         }
                     }
@@ -185,4 +205,90 @@ void makeConnection() {
     freeaddrinfo(res_tcp);
     freeaddrinfo(res_udp);
     closeFds(size, fds, fd_udp, fd_tcp);
+}
+
+
+int parseMessageUser(char *buffer, char *message) {
+    int code, len;
+    char message[128], operation[4], uid[8], tid[8];
+
+    ssacnf(buffer, "%s %s %s", operation, uid, tid);
+    code = verifyOperation(operation);
+
+    switch (code) {
+        case LIST:
+            if (verifyUid(uid) != 0 || verifyTid(tid) != 0) len = sprintf(message, "RLS ERR\n");
+            else len = sprintf(message, "VLD %s %s\n", uid, tid);
+            break;
+        case RETRIEVE:
+            if (verifyUid(uid) != 0 || verifyTid(tid) != 0) len = sprintf(message, "RRT ERR\n");
+            else len = sprintf(message, "VLD %s %s %s\n", uid, tid);
+            break;
+        case UPLOAD:
+            if (verifyUid(uid) != 0 || verifyTid(tid) != 0) len = sprintf(message, "RUP ERR\n");
+            else len = sprintf(message, "VLD %s %s %s %s\n", uid, tid);
+            break;
+        case DELETE:
+            if (verifyUid(uid) != 0 || verifyTid(tid) != 0) len = sprintf(message, "DEL ERR\n");
+            else len = sprintf(message, "VLD %s %s %s\n", uid, tid);
+            break;
+        case REMOVE:
+            if (verifyUid(uid) != 0 || verifyTid(tid) != 0) len = sprintf(message, "REM ERR\n");
+            else len = sprintf(message, "VLD %s %s\n", uid, tid);
+            break;
+        default:
+            len = sprintf(message, "ERR\n");
+            break;
+    }
+    return len;
+}
+
+
+void parseMessageAS(char *buffer, char *message, userinfo *fds, int size) {
+    int code, fd;
+    char message[128], operation[4], uid[6], third[9], fourth[16], fifth[26];
+
+    sscanf(buffer, "%s %s %s %s %s", operation, uid, third, fourth, fifth);
+
+    code = verifyOperation(operation);
+    if (code != CNF || verifyUid(uid) != 0 || verifyTid(third) != 0 || verifyFop(fourth, fifth) != 0) return ERROR;
+
+    fd = findUser(fds, uid, size);
+
+    code = fopCode(fourth);
+
+    switch (code) {
+        case LIST:
+            break;
+        case RETRIEVE:
+            break;
+        case UPLOAD:
+            break;
+        case DELETE:
+            break;
+        case REMOVE:
+            break;
+        case INV:
+            break;
+    }
+}
+
+
+int fopCode(char *fop) {
+    if (strcmp(fop, "L") == 0) return LIST;
+    if (strcmp(fop, "R") == 0) return RETRIEVE;
+    if (strcmp(fop, "U") == 0) return UPLOAD;
+    if (strcmp(fop, "D") == 0) return DELETE;
+    if (strcmp(fop, "X") == 0) return REMOVE;
+    if (strcmp(fop, "E") == 0) return INV;
+
+    return ERROR;
+}
+
+
+int findUser(userinfo *fds, char *uid, int size) {
+    for (int i = 0; i < size; i++) {
+        if (strcmp(fds[i]->uid, uid) == 0) return fds[i]->fd;
+    }
+    return ERROR;
 }

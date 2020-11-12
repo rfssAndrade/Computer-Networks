@@ -159,7 +159,7 @@ int verifyIp(char *ip) {
     int num, dots = 0;
     char *temp;
     char *ipCopy = malloc(sizeof(ip));
-    strcpy(ipCopy, ip); // verify??
+    strcpy(ipCopy, ip);
 
     if (ipCopy == NULL) return ERROR;
 
@@ -186,4 +186,16 @@ int verifyTid(char *tid) {
 
     printf("Invalid TID\n");
     return ERROR;
+}
+
+
+int verifyFsize(char *fsize) {
+    int size = atoi(fsize);
+
+    if (size > 999999999 || size == 0) {
+        printf("Invalid fSize: %d\n", size);
+        return 0;
+    }
+
+    return size;
 }

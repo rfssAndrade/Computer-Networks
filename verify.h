@@ -76,6 +76,7 @@ int verifyPort(char *port);
 int validateNumber(char *str);
 int verifyIp(char *ip);
 int verifyTid(char *tid);
+int verifyFsize(char *fsize);
 
 
 #endif

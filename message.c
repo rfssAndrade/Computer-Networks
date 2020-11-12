@@ -10,10 +10,9 @@ extern int errno;
 
 int readTcp(int fd, int nBytes, char *ptr) {
     int nread = 0, tread = 0;
-
+    printf("%d--",nBytes);
     while (tread != nBytes) {
         nread = read(fd, ptr, nBytes - tread);
-        puts("here");
         if (nread < 0) {
             if (tread == 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
                 puts("Read timeout");
@@ -21,9 +20,10 @@ int readTcp(int fd, int nBytes, char *ptr) {
             }
             else return tread;
         }
-        else if (nread == 0 && tread == 0) {
+        else if (nread == 0) {
             printf("Server closed socket\n");
-            return SOCKET_ERROR;
+            if (tread == 0) return SOCKET_ERROR;
+            else return tread;
         }
 
         ptr += nread;

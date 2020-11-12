@@ -344,7 +344,7 @@ int readMessageFS(int fd) {
         if (nread == -1) return nread;
         ptr += nread;
         *ptr = '\0';
-        verifyAnswerFS(operation);
+        code = verifyAnswerFS(operation);
     }
 
     return code;
@@ -503,7 +503,8 @@ int parseAnswerFS(char *operation, int code, int fd) {
                     while (fSize > 0) {
                         if (fSize < 127) nread  = readTcp(fd, fSize, ptr);
                         else nread  = readTcp(fd, 127, ptr);
-                        if (nread <= 0) {
+                        if (nread < 0) {
+                            puts("here");
                             fclose(fptr);
                             return nread;
                         }
@@ -559,16 +560,6 @@ int uploadFile(int fd, char *message) {
     }
 
     len = sprintf(message, "UPL %s %04d %s %lld ", uid, tid, fname, fsize);
-    // while (len > 0) {
-    //     nwritten = write(fd, ptr, len);
-    //     if (nwritten <= 0) {
-    //         fclose(fptr);
-    //         puts("ERROR ON SEND");
-    //         return ERROR;
-    //     } //?????
-    //     len -= nwritten;
-    //     ptr += nwritten;
-    // }
     nwritten = writeTcp(fd, len, ptr);
     if (nwritten < 0) {
         fclose(fptr);
@@ -583,14 +574,6 @@ int uploadFile(int fd, char *message) {
             return ERROR;
         }
 
-        // while (nread > 0) {
-        //     nwritten = write(fd, ptr, nread);
-        //     if (nwritten <= 0) {
-        //         fclose(fptr);
-        //         printf("ERROR ON SEND\n");
-        //         return ERROR;
-        //     }
-        // }
         nwritten = writeTcp(fd, nread, ptr);
         if (nwritten < 0) {
             fclose(fptr);
