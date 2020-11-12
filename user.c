@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "verify.h"
+#include "message.h"
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -103,8 +104,8 @@ void makeConnection() {
     socklen_t addrlen;
     struct addrinfo hints, *res_as, *res_fs;
     struct sockaddr_in addr;
-    char buffer[128]; // verificar tamanho
-    char command[128], second[128], third[128], answer[128], message[128]; // verificar tamanhos, preciso mallocs?
+    char buffer[128];
+    char command[16], second[32], third[32], answer[128], message[128];
     fd_set inputs, testfds;
 
     fd_as = socket(AF_INET, SOCK_STREAM, 0);
@@ -176,16 +177,14 @@ void makeConnection() {
             }
             else if (fd_fs != -1 && FD_ISSET(fd_fs, &testfds)) {
                 code = readMessageFS(fd_fs);
-                //verifyAnswerFS(answer);
                 FD_CLR(fd_fs, &inputs);
-                close(fd_fs); //verify?
+                close(fd_fs);
                 fd_fs = -1;
                 memset(fname, 0, sizeof(fname));
             }
             break;
         }
-        if (code == EXIT) break;
-        else if (code == SOCKET_ERROR) break;
+        if (code == EXIT || code == SOCKET_ERROR || code == REMOVE) break;
     }
 
     freeaddrinfo(res_as);
@@ -292,7 +291,7 @@ void sendMessage(int code, int fd_as, int fd_fs, char *message) {
         if (nwritten <= 0) {
             puts("ERROR ON SEND");
             break;
-        } //?????
+        }
         nleft -= nwritten;
         ptr += nwritten;
     }
@@ -300,39 +299,26 @@ void sendMessage(int code, int fd_as, int fd_fs, char *message) {
 
 
 int readMessageFS(int fd) {
-    char operation[8];
+    char operation[9];
     char *ptr = operation;
     int nread, code;
 
-    while (nread != 3) {
-        nread = read(fd, ptr, 3);
-        if (nread == -1) puts("ERROR ON READ");
-        else if (nread == 0) {
-            printf("Server closed socket\n");
-            return SOCKET_ERROR;
-        }
-        ptr += nread;
-    }
+    nread  = readTcp(fd, 3, ptr);
+    if (nread <= 0) return nread;
+    ptr += nread;
     *ptr = '\0';
 
     code = verifyOperation(operation);
     if (code == RLS || code == RRT) parseAnswerFS(operation, code, fd);
     else {
-        while (1) {
-            nread = read(fd, ptr, 1);
-            if (nread == -1) puts("ERROR ON READ");
-            else if (nread == 0) {
-                printf("Server closed socket\n");
-                return SOCKET_ERROR;
-            }
-            ptr += nread;
-            if (*(ptr-1) == '\n') break;
-        }
+        nread  = readTcp(fd, 5, ptr);
+        if (nread == -1) return nread;
+        ptr += nread;
         *ptr = '\0';
         verifyAnswerFS(operation);
     }
 
-    return 0;
+    return code;
 }
 
 
@@ -340,17 +326,20 @@ int readMessageAS(int fd, char *answer) {
     char *ptr = answer;
     int nread;
     // um bocado martelado ver melhor
-    while (*ptr != '\n') { // se o servidor não cumprir o protocolo isto não vai funcionar
-        nread = read(fd, ptr, 127); //change size
-        if (nread == -1) puts("ERROR ON READ");
-        else if(nread == 0) {
-            printf("Server closed socket\n");
-            return SOCKET_ERROR;
-        }
-        ptr += nread;
-        if (*(ptr-1) == '\n') break;
-    }
-    *(ptr++) = '\0'; //rever isto
+    // while (*ptr != '\n') { // se o servidor não cumprir o protocolo isto não vai funcionar
+    //     nread = read(fd, ptr, 127); //change size
+    //     if (nread == -1) puts("ERROR ON READ");
+    //     else if(nread == 0) {
+    //         printf("Server closed socket\n");
+    //         return SOCKET_ERROR;
+    //     }
+    //     ptr += nread;
+    //     if (*(ptr-1) == '\n') break;
+    // }
+    nread = readTcp(fd, 127, ptr);
+    if (nread <= 0) return nread;
+    ptr += nread;
+    *ptr = '\0'; //rever isto
     // ver tamanho buffer
     // ver socket timeout
     return 0;
@@ -428,38 +417,22 @@ int parseAnswerFS(char *operation, int code, int fd) {
     int nread = 0, nFiles, spacesRead = 0, i = 1, fSize;
     FILE *fptr;
 
-    while (nread != 3) {    // reads status
-        nread = read(fd, ptr, 3);
-        if (nread == -1) puts("ERROR ON READ");
-        else if (nread == 0) {
-            printf("Server closed socket\n");
-            return SOCKET_ERROR;
-        }
-        ptr += nread;
-    }
+    nread = readTcp(fd, 3, ptr); // read status
+    if (nread <= 0) return nread;
+    ptr += nread;
 
     switch (code) {
         case RLS:
             nFiles = atoi(status);
             if (nFiles > 0) {
                 if (nFiles > 9) {
-                    while (nread != 1) {
-                        nread = read(fd, ptr, 1);
-                        if (nread == -1) puts("ERROR ON READ");
-                        else if (nread == 0) {
-                            printf("Server closed socket\n");
-                            return SOCKET_ERROR;
-                        }
-                    }   
+                    nread = readTcp(fd, 1, ptr); // read space
+                    if (nread <= 0) return nread;
                 }
                 ptr = buffer;
                 while (i <= nFiles) {
-                    nread = read(fd, ptr, 1);
-                    if (nread == -1) puts("ERROR ON READ");
-                    else if (nread == 0) {
-                        printf("Server closed socket\n");
-                        return SOCKET_ERROR;
-                    }
+                    nread = readTcp(fd, 1, ptr);
+                    if (nread <= 0) return nread;
                     if (*ptr == ' ' || *ptr == '\n') spacesRead++;
                     ptr++;
 
@@ -474,45 +447,30 @@ int parseAnswerFS(char *operation, int code, int fd) {
                 }
             }
             else {
-                nread = 0;
-                while (nread != 2) {
-                    nread = read(fd, ptr, 2);
-                    if (nread == -1) puts("ERROR ON READ");
-                    else if (nread == 0) {
-                        printf("Server closed socket\n");
-                        return SOCKET_ERROR;
-                    }
-                    ptr += nread;
-                }
+                nread  = readTcp(fd, 2, ptr);
+                if (nread <= 0) return nread;
+                ptr += nread;
+
                 if (sprintf(buffer, "%s%s", operation, status) != 8) code = ERROR;
                 else verifyAnswerFS(buffer);
             }
-
             break;
 
         case RRT:
             if (strcmp(status, " OK") == 0) {
-                nread = 0;
-                while (nread != 1) {
-                    nread = read(fd, ptr, 1);
-                    if (nread == -1) puts("ERROR ON READ");
-                    else if (nread == 0) {
-                        printf("Server closed socket\n");
-                        return SOCKET_ERROR;
-                    }
-                }
+                nread  = readTcp(fd, 1, ptr);
+                if (nread <= 0) return nread;
+                
                 ptr = buffer;
                 memset(buffer, 0, sizeof(buffer));
                 while (1) {
-                    nread = read(fd, ptr, 1);
-                    if (nread == -1) puts("ERROR ON READ");
-                    else if (nread == 0) {
-                        printf("Server closed socket\n");
-                        return SOCKET_ERROR;
-                    }
-                    if (*ptr == ' ') break;
-                    ptr++;
+                    nread  = readTcp(fd, 1, ptr);
+                    if (nread <= 0) return nread;
+                    ptr += nread;
+
+                    if (*(ptr-1) == ' ') break;
                 }
+                *(ptr-1) = '\0';
                 fSize = atoi(buffer);
                 if (fSize == 0 || fSize > 999999999) printf("Invalid fSize: %d\n", fSize);
                 else {
@@ -522,14 +480,12 @@ int parseAnswerFS(char *operation, int code, int fd) {
                         printf("Error creating file %s\n", fname); // what happens if file already exists?
                         return ERROR;
                     }
-                    printf("%s\n", fname);
                     while (fSize > 0) {
-                        nread = read(fd, ptr, 127);
-                        if (nread == -1) puts("ERROR ON READ");
-                        else if (nread == 0) {
-                            printf("Server closed socket\n");
+                        if (fSize < 127) nread  = readTcp(fd, fSize, ptr);
+                        else nread  = readTcp(fd, 127, ptr);
+                        if (nread <= 0) {
                             fclose(fptr);
-                            return SOCKET_ERROR;
+                            return nread;
                         }
                         fSize -= nread;
                         if (fSize == -1) {
@@ -544,16 +500,10 @@ int parseAnswerFS(char *operation, int code, int fd) {
                 fclose(fptr);
             }
             else {
-                nread = 0;
-                while (nread != 2) {
-                    nread = read(fd, ptr, 2);
-                    if (nread == -1) puts("ERROR ON READ");
-                    else if (nread == 0) {
-                        printf("Server closed socket\n");
-                        return SOCKET_ERROR;
-                    }
-                    ptr += nread;
-                }
+                nread  = readTcp(fd, 2, ptr);
+                if (nread <= 0) return nread;
+                ptr += nread;
+
                 if (sprintf(buffer, "%s%s", operation, status) != 8) code = ERROR;
                 else verifyAnswerFS(buffer);
             }
@@ -576,7 +526,7 @@ int uploadFile(int fd, char *message) {
 
     fptr = fopen(fname, "r");
     if (fptr == NULL) {
-        printf("Error opening file %s\n", fname); // what happens if file already exists?
+        printf("Error opening file %s\n", fname);
         return ERROR;
     }
 
