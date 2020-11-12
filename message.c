@@ -10,7 +10,6 @@ extern int errno;
 
 int readTcp(int fd, int nBytes, char *ptr) {
     int nread = 0, tread = 0;
-    printf("%d--",nBytes);
     while (tread != nBytes) {
         nread = read(fd, ptr, nBytes - tread);
         if (nread < 0) {
