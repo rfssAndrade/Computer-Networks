@@ -13,21 +13,46 @@ int readTcp(int fd, int nBytes, char *ptr) {
 
     while (tread != nBytes) {
         nread = read(fd, ptr, nBytes - tread);
-
+        puts("here");
         if (nread < 0) {
-            if (errno == EWOULDBLOCK || errno == EAGAIN)
-            {puts("ERROR ON READ");
-            return ERROR;}
+            if (tread == 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+                puts("Read timeout");
+                return ERROR;
+            }
+            else return tread;
         }
-        else if (tread == 0 && nread == 0) {
+        else if (nread == 0 && tread == 0) {
             printf("Server closed socket\n");
             return SOCKET_ERROR;
         }
-        else if (nread == 0) return tread;
 
         ptr += nread;
         tread += nread;
-        //if (*(ptr-1) == '\n') break;
     }
     return tread;
+}
+
+
+int writeTcp(int fd, int nBytes, char *ptr) {
+    int nwritten = 0, twritten = 0;
+
+    while (twritten != nBytes) {
+        nwritten = write(fd, ptr, nBytes - twritten);
+
+        if (nwritten < 0) {
+            if (twritten == 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+                puts("Write timeout");
+                return ERROR;
+            }
+            else if (twritten == 0 && errno == EPIPE) {
+                printf("Server closed socket\n");
+                return SOCKET_ERROR;
+            }
+            else return twritten;
+        }
+
+        ptr += nwritten;
+        twritten += nwritten;
+    }
+    return twritten;
 }

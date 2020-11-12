@@ -94,7 +94,7 @@ void makeConnection() {
 
     memset(&action, 0, sizeof action);
     action.sa_handler = SIG_IGN;
-    if (sigaction(SIGPIPE, &action, NULL) == -1) exit(1); //????
+    if (sigaction(SIGPIPE, &action, NULL) == -1) exit(1);
 
     fd_udp = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd_udp == -1) exit(1);

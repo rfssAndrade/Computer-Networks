@@ -6,6 +6,7 @@
 
 
 int readTcp(int fd, int nBytes, char *ptr);
+int writeTcp(int fd, int nBytes, char *ptr);
 
 
 #endif

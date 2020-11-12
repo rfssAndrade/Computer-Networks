@@ -4,6 +4,7 @@
 #include <netdb.h>
 #include <string.h>
 #include <stdio.h>
+#include <signal.h>
 #include "verify.h"
 
 
@@ -91,9 +92,14 @@ void makeConnection() {
     struct sockaddr_in addr_client, addr_server;
     char buffer[128], command[8], second[8], third[16], answer[128], message[128];
     fd_set inputs, testfds;
+    struct sigaction action;
+
+    memset(&action, 0, sizeof action);
+    action.sa_handler = SIG_IGN;
+    if (sigaction(SIGPIPE, &action, NULL) == -1) exit(1);
 
     fd_client = socket(AF_INET, SOCK_DGRAM, 0);
-    if (fd_client == -1) exit(1);  // correto?
+    if (fd_client == -1) exit(1);
 
     fd_server = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd_server == -1) exit(1);

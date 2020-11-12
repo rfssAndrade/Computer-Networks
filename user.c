@@ -6,10 +6,11 @@
 #include <netdb.h>
 #include <string.h>
 #include <stdio.h>
-#include "verify.h"
-#include "message.h"
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <signal.h>
+#include "verify.h"
+#include "message.h"
 
 
 char *ASIP = NULL;
@@ -107,18 +108,32 @@ void makeConnection() {
     char buffer[128];
     char command[16], second[32], third[32], answer[128], message[128];
     fd_set inputs, testfds;
-    struct timeval tv_as, tv_fs;
+    struct timeval tv_as_r, tv_as_w, tv_fs_r, tv_fs_w;
+    struct sigaction action;
 
-    tv_as.tv_sec = 1;
-    tv_as.tv_usec = 0;
+    memset(&action, 0, sizeof action);
+    action.sa_handler = SIG_IGN;
+    if (sigaction(SIGPIPE, &action, NULL) == -1) exit(1);
 
-    tv_fs.tv_sec = 1;
-    tv_fs.tv_usec = 0;
+    tv_as_r.tv_sec = 0;
+    tv_as_r.tv_usec = 100;
+
+    tv_as_w.tv_sec = 0;
+    tv_as_r.tv_usec = 100;
+
+    tv_fs_r.tv_sec = 0;
+    tv_fs_r.tv_usec = 100;
+
+    tv_fs_w.tv_sec = 0;
+    tv_fs_w.tv_usec = 100;
 
     fd_as = socket(AF_INET, SOCK_STREAM, 0);
     if (fd_as == -1) exit(1);
 
-    setsockopt(fd_as, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv_as, sizeof tv_as);
+    n = setsockopt(fd_as, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv_as_r, sizeof tv_as_r);
+    if (n == -1) exit(1);
+    n = setsockopt(fd_as, SOL_SOCKET, SO_SNDTIMEO, (const char*)&tv_as_w, sizeof tv_as_w);
+    if (n == -1) exit(1);
 
     FD_ZERO(&inputs);
     FD_SET(0, &inputs);
@@ -168,7 +183,10 @@ void makeConnection() {
                     fd_fs = socket(AF_INET, SOCK_STREAM, 0);
                     if (fd_fs == -1) exit(1);
 
-                    setsockopt(fd_fs, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv_fs, sizeof tv_fs);
+                    n = setsockopt(fd_fs, SOL_SOCKET, SO_SNDTIMEO, (const char*)&tv_fs_r, sizeof tv_fs_r);
+                    if (n == -1) exit(1); // change
+                    n = setsockopt(fd_fs, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv_fs_w, sizeof tv_fs_w);
+                    if (n == -1) exit(1); // change
 
                     n = connect(fd_fs, res_fs->ai_addr, res_fs->ai_addrlen);
                     if (n == -1) exit(1);
@@ -541,15 +559,20 @@ int uploadFile(int fd, char *message) {
     }
 
     len = sprintf(message, "UPL %s %04d %s %lld ", uid, tid, fname, fsize);
-    while (len > 0) {
-        nwritten = write(fd, ptr, len);
-        if (nwritten <= 0) {
-            fclose(fptr);
-            puts("ERROR ON SEND");
-            return ERROR;
-        } //?????
-        len -= nwritten;
-        ptr += nwritten;
+    // while (len > 0) {
+    //     nwritten = write(fd, ptr, len);
+    //     if (nwritten <= 0) {
+    //         fclose(fptr);
+    //         puts("ERROR ON SEND");
+    //         return ERROR;
+    //     } //?????
+    //     len -= nwritten;
+    //     ptr += nwritten;
+    // }
+    nwritten = writeTcp(fd, len, ptr);
+    if (nwritten < 0) {
+        fclose(fptr);
+        return nwritten;
     }
     ptr = buffer;
     while (fsize > 0) {
@@ -560,18 +583,20 @@ int uploadFile(int fd, char *message) {
             return ERROR;
         }
 
-        while (nread > 0) {
-            nwritten = write(fd, ptr, nread);
-            if (nwritten <= 0) {
-                fclose(fptr);
-                printf("ERROR ON SEND\n");
-                return ERROR;
-            }
-            fsize -= nwritten;
-            nread -= nwritten;
-            ptr += nwritten;
+        // while (nread > 0) {
+        //     nwritten = write(fd, ptr, nread);
+        //     if (nwritten <= 0) {
+        //         fclose(fptr);
+        //         printf("ERROR ON SEND\n");
+        //         return ERROR;
+        //     }
+        // }
+        nwritten = writeTcp(fd, nread, ptr);
+        if (nwritten < 0) {
+            fclose(fptr);
+            return nwritten;
         }
-
+        fsize -= nwritten;
         ptr = buffer;
     }
     if (fsize <= 0) write(fd, "\n", 1);
