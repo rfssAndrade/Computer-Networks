@@ -21,8 +21,8 @@ int readTcp(int fd, int nBytes, char *ptr) {
         else if (nread == 0) return tread;
 
         ptr += nread;
-        if (*(ptr-1) == '\n') break;
         tread += nread;
+        if (*(ptr-1) == '\n') break;
     }
     return tread;
 }
