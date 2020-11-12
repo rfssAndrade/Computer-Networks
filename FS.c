@@ -171,8 +171,8 @@ void makeConnection() {
                 else {
                     for (int i = 0; i < size; i++) {
                         if (fds[i]->fd != 0 && FD_ISSET(fds[i]->fd, &testfds)) {
-                            n = readTcp(fds[i]->fd, 12, buffer);
-
+                            n = readTcp(fds[i]->fd, 15, buffer);
+                            printf("%s\n", buffer);
                             if (n == -1) break;
                             if (n == SOCKET_ERROR) {
                                 FD_CLR(fds[i]->fd, &inputs);
@@ -189,6 +189,7 @@ void makeConnection() {
                                 if (code == ERROR) puts("ERROR");
                             }
                             else writeTcp(fds[i]->fd, len, message);
+                            printf("%s", message);
 
                             FD_CLR(fds[i]->fd, &inputs);
                             close(fds[i]->fd);
