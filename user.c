@@ -132,8 +132,8 @@ void makeConnection() {
 
     n = setsockopt(fd_as, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv_as_r, sizeof tv_as_r);
     if (n == -1) exit(1);
-    n = setsockopt(fd_as, SOL_SOCKET, SO_SNDTIMEO, (const char*)&tv_as_w, sizeof tv_as_w);
-    if (n == -1) exit(1);
+    //n = setsockopt(fd_as, SOL_SOCKET, SO_SNDTIMEO, (const char*)&tv_as_w, sizeof tv_as_w);
+    //if (n == -1) exit(1);
 
     FD_ZERO(&inputs);
     FD_SET(0, &inputs);
@@ -183,8 +183,8 @@ void makeConnection() {
                     fd_fs = socket(AF_INET, SOCK_STREAM, 0);
                     if (fd_fs == -1) exit(1);
 
-                    n = setsockopt(fd_fs, SOL_SOCKET, SO_SNDTIMEO, (const char*)&tv_fs_r, sizeof tv_fs_r);
-                    if (n == -1) exit(1); // change
+                    //n = setsockopt(fd_fs, SOL_SOCKET, SO_SNDTIMEO, (const char*)&tv_fs_r, sizeof tv_fs_r);
+                    //if (n == -1) exit(1); // change
                     n = setsockopt(fd_fs, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv_fs_w, sizeof tv_fs_w);
                     if (n == -1) exit(1); // change
 
