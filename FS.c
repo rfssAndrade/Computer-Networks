@@ -356,6 +356,9 @@ userinfo parseMessageAS(char *buffer, char *message, userinfo *fds, int size) {
         case REMOVE:
             removeUser(user, uid);
             break;
+        case UPLOAD:
+            len = sprintf(message, "RUP OK\n");
+            writeTcp(user->fd, len, message);
         case INV:
             if (user->lastOp == UPLOAD) removeFile(user, uid);
             len = sprintf(message, "%s INV\n", operation);
