@@ -213,15 +213,15 @@ void makeConnection() {
                             // }
                             
 
-                            if (n == -1) break;
-                            if (n == SOCKET_ERROR) {
-                                FD_CLR(fds[i]->fd, &inputs);
-                                close(fds[i]->fd);
-                                free(fds[i]->uid);
-                                free(fds[i]);
-                                fds[i] = NULL;
-                                break;
-                            }
+                            // if (n == -1) break;
+                            // if (n == SOCKET_ERROR) {
+                            //     FD_CLR(fds[i]->fd, &inputs);
+                            //     close(fds[i]->fd);
+                            //     free(fds[i]->uid);
+                            //     free(fds[i]);
+                            //     fds[i] = NULL;
+                            //     break;
+                            // }
 
                                 len = parseMessageUser(buffer, message, fds[i]);
                             if (len > 8) {
@@ -314,7 +314,7 @@ userinfo parseMessageAS(char *buffer, char *message, userinfo *fds, int size) {
 
     user = findUser(fds, uid, size);
 
-    if (user == NULL) code = INV;
+    if (user == NULL) return NULL;
     else code = fopCode(fourth);
 
     switch (code) {
