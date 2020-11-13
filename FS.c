@@ -162,13 +162,13 @@ void makeConnection() {
                     n = recvfrom(fd_udp, buffer, 128, 0, (struct sockaddr *)&addr, &addrlen);
                     if (n == ERROR) puts("ERROR");
                     user = parseMessageAS(buffer, message, fds, size);
-                    if (user != NULL) {
-                        FD_CLR(user->fd, &inputs);
-                        close(user->fd);
-                        free(user->uid);
-                        free(user);
-                        user = NULL;
-                    }
+                    // if (user != NULL) {
+                    //     FD_CLR(user->fd, &inputs);
+                    //     close(user->fd);
+                    //     free(user->uid);
+                    //     free(user);
+                    //     user = NULL;
+                    // }
                 }
                 
                 else if (FD_ISSET(fd_tcp, &testfds)) {
@@ -205,14 +205,14 @@ void makeConnection() {
                                 code = sendto(fd_udp, message, strlen(message), 0, res_udp->ai_addr, res_udp->ai_addrlen); //mudar
                                 if (code == ERROR) puts("ERROR");
                             }
-                            else {
-                                writeTcp(fds[i]->fd, len, message); // verificar
-                                FD_CLR(fds[i]->fd, &inputs);
-                                close(fds[i]->fd);
-                                free(fds[i]->uid);
-                                free(fds[i]);
-                                fds[i] = NULL;
-                            }
+                            // else {
+                            //     writeTcp(fds[i]->fd, len, message); // verificar
+                            //     FD_CLR(fds[i]->fd, &inputs);
+                            //     close(fds[i]->fd);
+                            //     free(fds[i]->uid);
+                            //     free(fds[i]);
+                            //     fds[i] = NULL;
+                            // }
 
                             break;
                         }
