@@ -190,15 +190,15 @@ void makeConnection() {
                         if (fds[i] != NULL && fds[i]->fd != 0 && FD_ISSET(fds[i]->fd, &testfds)) {
                             n = readTcp(fds[i]->fd, 15, buffer);
 
-                            if (n == -1) break;
-                            if (n == SOCKET_ERROR) {
-                                FD_CLR(fds[i]->fd, &inputs);
-                                close(fds[i]->fd);
-                                free(fds[i]->uid);
-                                free(fds[i]);
-                                fds[i] = NULL;
-                                break;
-                            }
+                            // if (n == -1) break;
+                            // if (n == SOCKET_ERROR) {
+                            //     FD_CLR(fds[i]->fd, &inputs);
+                            //     close(fds[i]->fd);
+                            //     free(fds[i]->uid);
+                            //     free(fds[i]);
+                            //     fds[i] = NULL;
+                            //     break;
+                            // }
 
                             len = parseMessageUser(buffer, message, fds[i]);
                             if (len > 8) {
