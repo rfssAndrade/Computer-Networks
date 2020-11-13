@@ -105,8 +105,9 @@ void makeConnection() {
     userinfo user;
     struct timeval tv_tcp_r, tv_udp_r;
     char dummy[1024];
-    tv_tcp_r.tv_sec = 0;
-    tv_tcp_r.tv_usec = 100;
+
+    tv_tcp_r.tv_sec = 1;
+    tv_tcp_r.tv_usec = 0;
 
     tv_udp_r.tv_sec = 0;
     tv_udp_r.tv_usec = 100;
