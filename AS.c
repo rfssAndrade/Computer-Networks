@@ -36,7 +36,7 @@ void sendMessageTcp(userinfo user, char *message, int len);
 int readMessageTcp(userinfo user, char *buffer);
 int loginUser(char *uid, char *pass, userinfo userinfo);
 void logoutUser(char *uid);
-int approveRequest(char *uid, char *rid, char *fop, char *fname, int *vc, struct addrinfo *res);
+int approveRequest(char *uid, char *rid, char *fop, char *fname, int *vc, struct addrinfo **res);
 int rvc(char *uid, char *status);
 int validateUser(char *uid, char *rid, char *vc);
 int validateOperation(char *uid, char *tid, char *message);
@@ -285,7 +285,7 @@ void parseMessage(char *buffer, userinfo user, int fd_udp, struct sockaddr_in ad
             break;
 
         case REQ:
-            codeStatus = approveRequest(uid, third, fourth, fifth, &vc, res);
+            codeStatus = approveRequest(uid, third, fourth, fifth, &vc, &res);
             if (codeStatus != OK) {
                 len = formatMessage(codeOperation, codeStatus, message);
                 sendMessageTcp(user, message, len);
@@ -568,7 +568,7 @@ void logoutUser(char *uid) {
 }
 
 
-int approveRequest(char *uid, char *rid, char *fop, char *fname, int *vc, struct addrinfo *res) {
+int approveRequest(char *uid, char *rid, char *fop, char *fname, int *vc, struct addrinfo **res) {
     DIR *dUsers;
     struct dirent *dir;
     FILE *fptr;
@@ -610,7 +610,7 @@ int approveRequest(char *uid, char *rid, char *fop, char *fname, int *vc, struct
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_DGRAM;
-    n = getaddrinfo(PDIP, PDport, &hints, &res);
+    n = getaddrinfo(PDIP, PDport, &hints, res);
     if (n == -1) return NOK;
 
     sprintf(path, "./USERS/%s/req.txt", uid);
