@@ -465,7 +465,7 @@ int readMessageTcp(userinfo user, char *buffer) {
     char ip[INET_ADDRSTRLEN];
     unsigned int port;
 
-    readTcp(user->fd, 127, ptr);
+    nread = readTcp(user->fd, 127, ptr);
     ptr += nread;
     *ptr = '\0';
 
