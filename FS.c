@@ -365,10 +365,12 @@ void list(userinfo user, char *uid) {
     dUsers = opendir(path);
     if (dUsers == NULL) return; // eu sei que existe aqui
     while ((dir = readdir(dUsers)) != NULL) {
-        nfiles++;
-        fsize = fileSize(dir->d_name);
-        sprintf(temp, " %s %lld", dir->d_name, fsize);
-        strcat(files, temp);
+        if (verifyFname(dir->d_name) == 0) {
+            nfiles++;
+            fsize = fileSize(dir->d_name);
+            sprintf(temp, " %s %lld", dir->d_name, fsize);
+            strcat(files, temp);
+        }
     }
     closedir(dUsers);
     if (nfiles == 0) len = sprintf(message, "RLS EOF\n");
