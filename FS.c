@@ -314,7 +314,7 @@ userinfo parseMessageAS(char *buffer, char *message, userinfo *fds, int size) {
 
     user = findUser(fds, uid, size);
 
-    if (user == NULL) code = NULL;
+    if (user == NULL) return;
     else code = fopCode(fourth);
 
     switch (code) {
