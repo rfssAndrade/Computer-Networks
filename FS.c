@@ -268,7 +268,7 @@ int parseMessageUser(char *buffer, char *message, userinfo user) {
             }
             break;
         case RETRIEVE:
-            if (verifyUid(uid) != 0 || verifyTid(tid) != 0 || verifyFname(fname) != 0) len = sprintf(message, "RRT ERR\n");
+            if (verifyUid(uid) != 0 || verifyTid(tid) != 0) len = sprintf(message, "RRT ERR\n");
             else {
                 len = sprintf(message, "VLD %s %s\n", uid, tid);
                 strcpy(user->uid, uid);
@@ -282,7 +282,7 @@ int parseMessageUser(char *buffer, char *message, userinfo user) {
         //     }
             break;
         case DELETE:
-            if (verifyUid(uid) != 0 || verifyTid(tid) != 0 || verifyFname(fname) != 0) len = sprintf(message, "DEL ERR\n");
+            if (verifyUid(uid) != 0 || verifyTid(tid) != 0) len = sprintf(message, "DEL ERR\n");
             else {
                 len = sprintf(message, "VLD %s %s\n", uid, tid);
                 strcpy(user->uid, uid);
