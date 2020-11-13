@@ -210,7 +210,7 @@ void makeConnection() {
                             // }
                             // else {
                             //     n = readTcp(fds[i]->fd, 124, buffer + 3);
-                            }
+                            // }
                             
 
                             if (n == -1) break;
