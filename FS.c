@@ -253,9 +253,9 @@ void makeConnection() {
 
 int parseMessageUser(char *buffer, char *message, userinfo user) {
     int code, len;
-    char  operation[4], uid[8], tid[8], fname[32];
+    char  operation[4], uid[8], tid[8];
 
-    sscanf(buffer, "%s %s %s %s", operation, uid, tid, fname);
+    sscanf(buffer, "%s %s %s", operation, uid, tid);
     code = verifyOperation(operation);
 
     switch (code) {
@@ -267,7 +267,7 @@ int parseMessageUser(char *buffer, char *message, userinfo user) {
             }
             break;
         case RETRIEVE:
-            if (verifyUid(uid) != 0 || verifyTid(tid) != 0 || verifyFname(fname) != 0) len = sprintf(message, "RRT ERR\n");
+            if (verifyUid(uid) != 0 || verifyTid(tid) != 0) len = sprintf(message, "RRT ERR\n");
             else {
                 len = sprintf(message, "VLD %s %s\n", uid, tid);
                 strcpy(user->uid, uid);
@@ -281,7 +281,7 @@ int parseMessageUser(char *buffer, char *message, userinfo user) {
         //     }
             break;
         case DELETE:
-            if (verifyUid(uid) != 0 || verifyTid(tid) != 0 || verifyFname(fname) != 0) len = sprintf(message, "DEL ERR\n");
+            if (verifyUid(uid) != 0 || verifyTid(tid) != 0) len = sprintf(message, "DEL ERR\n");
             else {
                 len = sprintf(message, "VLD %s %s\n", uid, tid);
                 strcpy(user->uid, uid);
