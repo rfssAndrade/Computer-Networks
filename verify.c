@@ -199,3 +199,15 @@ int verifyFsize(char *fsize) {
 
     return size;
 }
+
+
+int fopCode(char *fop) {
+    if (strcmp(fop, "L") == 0) return LIST;
+    if (strcmp(fop, "R") == 0) return RETRIEVE;
+    if (strcmp(fop, "U") == 0) return UPLOAD;
+    if (strcmp(fop, "D") == 0) return DELETE;
+    if (strcmp(fop, "X") == 0) return REMOVE;
+    if (strcmp(fop, "E") == 0) return INV;
+
+    return ERROR;
+}

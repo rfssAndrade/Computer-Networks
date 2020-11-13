@@ -77,6 +77,7 @@ int validateNumber(char *str);
 int verifyIp(char *ip);
 int verifyTid(char *tid);
 int verifyFsize(char *fsize);
+int fopCode(char *fop);
 
 
 #endif

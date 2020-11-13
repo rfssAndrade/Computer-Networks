@@ -13,6 +13,7 @@ userinfo createUserinfo(int fd, struct sockaddr_in addr) {
     new->uid = calloc(6, sizeof(char));
     new->lastOp = 0;
     new->lastUploadedFile = calloc(26, sizeof(char));
+    new->waitingForPd = 0;
 
     return new;
 }
@@ -31,10 +32,19 @@ void closeFds(int size, userinfo *fds, int fd_udp, int fd_tcp) {
         if (fds[i] != NULL) {
             close(fds[i]->fd);
             free(fds[i]->uid);
+            free(fds[i]->lastUploadedFile);
             free(fds[i]);
         }
     }
     close(fd_udp);
     close(fd_tcp);
     free(fds);
+}
+
+
+userinfo findUser(userinfo *fds, char *uid, int size) {
+    for (int i = 0; i < size; i++) {
+        if (fds[i] != NULL && strcmp(fds[i]->uid, uid) == 0) return fds[i];
+    }
+    return NULL;
 }

@@ -28,7 +28,7 @@ user: verify.o message.o user.o
 
 ### AS ###
 AS.o: AS.c verify.h userinfo.h
-AS: verify.o userinfo.o AS.o
+AS: verify.o userinfo.o message.o AS.o
 
 ### FS ###
 FS.o: FS.c verify.h userinfo.h message.h

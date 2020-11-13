@@ -24,8 +24,6 @@ void parseArgs(int argc, char **argv);
 void makeConnection();
 int parseMessageUser(char *buffer, char *message, userinfo user);
 userinfo parseMessageAS(char *buffer, char *message, userinfo *fds, int size);
-int fopCode(char *fop);
-userinfo findUser(userinfo *fds, char *uid, int size);
 void list(userinfo user, char *uid);
 int searchDir(DIR *d, struct dirent *dir, char *uid);
 off_t fileSize(char *filename);
@@ -354,26 +352,6 @@ userinfo parseMessageAS(char *buffer, char *message, userinfo *fds, int size) {
             break;
     }
     return user;
-}
-
-
-int fopCode(char *fop) {
-    if (strcmp(fop, "L") == 0) return LIST;
-    if (strcmp(fop, "R") == 0) return RETRIEVE;
-    if (strcmp(fop, "U") == 0) return UPLOAD;
-    if (strcmp(fop, "D") == 0) return DELETE;
-    if (strcmp(fop, "X") == 0) return REMOVE;
-    if (strcmp(fop, "E") == 0) return INV;
-
-    return ERROR;
-}
-
-
-userinfo findUser(userinfo *fds, char *uid, int size) {
-    for (int i = 0; i < size; i++) {
-        if (fds[i] != NULL && strcmp(fds[i]->uid, uid) == 0) return fds[i];
-    }
-    return NULL;
 }
 
 
