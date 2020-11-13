@@ -478,22 +478,38 @@ void delete(userinfo user, char *uid, char *fname) {
 
     dUsers = opendir("USERSF");
     if (dUsers == NULL) {
-        len = sprintf(message, "RRM NOK\n");
+        len = sprintf(message, "RDL NOK\n");
         writeTcp(user->fd, len, message);
         return;
     }
     if (!searchDir(dUsers, dir, uid)) {
         closedir(dUsers);
-        len = sprintf(message, "RRM NOK\n");
+        len = sprintf(message, "RDL NOK\n");
         writeTcp(user->fd, len, message);
         return;
     }
     closedir(dUsers);
 
     sprintf(path, "USERSF/%s", uid);
+    dUsers = opendir(path);
+    if (dUsers == NULL) {
+        len = sprintf(message, "RDL NOK\n");
+        writeTcp(user->fd, len, message);
+        return;
+    }
+    if (!searchDir(dUsers, dir, fname)) {
+        closedir(dUsers);
+        len = sprintf(message, "RDL EOF\n");
+        writeTcp(user->fd, len, message);
+        return;
+    }
+    closedir(dUsers);
+
+    sprintf(path, "USERSF/%s/%s", uid, fname);
+    if(remove(path)) deleted = 1;
 
     if (deleted) len = sprintf(message, "RDL OK\n");
-    else len = sprintf(message, "RDL EOF");
+    else len = sprintf(message, "RDL EOF\n");
 
     writeTcp(user->fd, len , message);
 }
