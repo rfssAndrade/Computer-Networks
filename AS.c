@@ -602,6 +602,7 @@ int approveRequest(char *uid, char *rid, char *fop, char *fname, int *vc, struct
     fptr = fopen(path, "r");
     if (fptr == NULL) return NOK;
 
+    memset(buffer, 0, sizeof(buffer));
     fread(buffer, sizeof(char), 127, fptr);
     sscanf(buffer, "%s %s", PDIP, PDport);
     fclose(fptr);
@@ -647,6 +648,7 @@ int validateUser(char *uid, char *rid, char *vc) {
     fptr = fopen(path, "r");
     if (fptr == NULL) return 0;
 
+    memset(buffer, 0, sizeof(buffer));
     fread(buffer, sizeof(char), 127, fptr);
     sscanf(buffer, "%s %s %s %s", localRid, localVc, fop, fname);
 
@@ -683,6 +685,7 @@ int validateOperation(char *uid, char *tid, char *message) {
         return len;
     }
 
+    memset(buffer, 0, sizeof(buffer));
     fread(buffer, sizeof(char), 127, fptr);
     nread = sscanf(buffer, "%s %s %s", localTid, fop, fname);
     fclose(fptr);
