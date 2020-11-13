@@ -478,6 +478,7 @@ int readMessageTcp(userinfo user, char *buffer) {
     unsigned int port;
 
     nread = readTcp(user->fd, 127, ptr);
+    if (nread <= 0) return nread;
     ptr += nread;
     *ptr = '\0';
 
