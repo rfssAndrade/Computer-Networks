@@ -202,15 +202,14 @@ void makeConnection() {
                 else {
                     for (int i = 0; i < size; i++) {
                         if (fds[i] != NULL && fds[i]->fd != 0 && FD_ISSET(fds[i]->fd, &testfds)) {
-                            n = readTcp(fds[i]->fd, 3, buffer);
+                            n = readTcp(fds[i]->fd, 15, buffer);
 
-                            code = verifyOperation(buffer);
-                            if (code == UPLOAD) {
-                                break;
-                            }
-                            else {
-                                n = readTcp(fds[i]->fd, 124, buffer + 3);
-                                len = parseMessageUser(buffer, message, fds[i]);
+                            // code = verifyOperation(buffer);
+                            // if (code == UPLOAD) {
+                            //     break;
+                            // }
+                            // else {
+                            //     n = readTcp(fds[i]->fd, 124, buffer + 3);
                             }
                             
 
@@ -224,6 +223,7 @@ void makeConnection() {
                                 break;
                             }
 
+                                len = parseMessageUser(buffer, message, fds[i]);
                             if (len > 8) {
                                 code = sendto(fd_udp, message, strlen(message), 0, res_udp->ai_addr, res_udp->ai_addrlen); //mudar
                                 if (code == ERROR) puts("ERROR");
