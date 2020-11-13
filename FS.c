@@ -180,7 +180,7 @@ void makeConnection() {
                     nextFreeEntry = findNextFreeEntry(fds, size);
                     if (nextFreeEntry == size) {
                         fds = realloc(fds, (size * 2) * sizeof(userinfo));
-                        for (int i = size; i < size * 2; i++) fds[i] = NULL;
+                        for (int i = nextFreeEntry; i < size * 2; i++) fds[i] = NULL;
                         size *= 2;
                     }
                 }
