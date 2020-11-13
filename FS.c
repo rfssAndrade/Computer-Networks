@@ -579,7 +579,7 @@ int upload(char *buffer, char *message, userinfo user) {
     }
     *(ptr-1) = '\0';
 
-    ptr = fsize;
+    ptr = size;
     while (1) {
         nread  = readTcp(user->fd, 1, ptr);
         if (nread <= 0) return nread;
