@@ -628,10 +628,10 @@ int upload(char *buffer, char *message, userinfo user) {
     while (fsize > 0) {
         if (fsize < 127) nread  = readTcp(user->fd, fsize, ptr);
         else nread  = readTcp(user->fd, 127, ptr);
-        if (nread < 0) {
-            fclose(fptr);
-            return nread;
-        }
+        // if (nread < 0) {
+        //     fclose(fptr);
+        //     return nread;
+        // }
         fsize -= nread;
         if (fsize == -1) {
             ptr += nread - 1;
