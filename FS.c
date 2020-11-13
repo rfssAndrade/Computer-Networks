@@ -474,7 +474,7 @@ void delete(userinfo user, char *uid, char *fname) {
     DIR *dUsers;
     struct dirent *dir;
     char path[32], message[16];
-    int len, deleted = 0;
+    int len = 0, deleted = 0;
 
     dUsers = opendir("USERSF");
     if (dUsers == NULL) {
