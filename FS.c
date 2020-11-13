@@ -23,9 +23,9 @@ int verbose = 0;
 void parseArgs(int argc, char **argv);
 void makeConnection();
 int parseMessageUser(char *buffer, char *message);
-void parseMessageAS(char *buffer, char *message, userinfo *fds, int size);
+userinfo parseMessageAS(char *buffer, char *message, userinfo *fds, int size);
 int fopCode(char *fop);
-int findUser(userinfo *fds, char *uid, int size);
+userinfo findUser(userinfo *fds, char *uid, int size);
 
 
 int main(int argc, char **argv) {
@@ -94,6 +94,7 @@ void makeConnection() {
     DIR *d;
     char buffer[128], message[128];
     int len, code;
+    userinfo user;
 
     if ((d = opendir("USERSF")) == NULL) {
         n = mkdir("USERSF", 0777);
@@ -151,7 +152,12 @@ void makeConnection() {
                     addrlen = sizeof(addr);
                     n = recvfrom(fd_udp, buffer, 128, 0, (struct sockaddr *)&addr, &addrlen);
                     if (n == ERROR) puts("ERROR");
-                    parseMessageAS(buffer, message, fds, size);
+                    user = parseMessageAS(buffer, message, fds, size);
+                    FD_CLR(user->fd, &inputs);
+                    close(user->fd);
+                    free(user->uid);
+                    free(user);
+                    user = NULL;
                 }
                 
                 else if (FD_ISSET(fd_tcp, &testfds)) {
@@ -172,7 +178,7 @@ void makeConnection() {
                     for (int i = 0; i < size; i++) {
                         if (fds[i]->fd != 0 && FD_ISSET(fds[i]->fd, &testfds)) {
                             n = readTcp(fds[i]->fd, 15, buffer);
-                            printf("%s\n", buffer);
+
                             if (n == -1) break;
                             if (n == SOCKET_ERROR) {
                                 FD_CLR(fds[i]->fd, &inputs);
@@ -188,8 +194,7 @@ void makeConnection() {
                                 code = sendto(fd_udp, message, strlen(message), 0, res_udp->ai_addr, res_udp->ai_addrlen); //mudar
                                 if (code == ERROR) puts("ERROR");
                             }
-                            else writeTcp(fds[i]->fd, len, message);
-                            printf("%s", message);
+                            else writeTcp(fds[i]->fd, len, message); // verificar
 
                             FD_CLR(fds[i]->fd, &inputs);
                             close(fds[i]->fd);
@@ -247,8 +252,9 @@ int parseMessageUser(char *buffer, char *message) {
 }
 
 
-void parseMessageAS(char *buffer, char *message, userinfo *fds, int size) {
-    int code, fd;
+userinfo parseMessageAS(char *buffer, char *message, userinfo *fds, int size) {
+    int code, len;
+    userinfo user;
     char operation[4], uid[6], third[9], fourth[16], fifth[26];
 
     sscanf(buffer, "%s %s %s %s %s", operation, uid, third, fourth, fifth);
@@ -256,26 +262,32 @@ void parseMessageAS(char *buffer, char *message, userinfo *fds, int size) {
     code = verifyOperation(operation);
     if (code != CNF || verifyUid(uid) != 0 || verifyTid(third) != 0 || verifyFop(fourth, fifth) != 0) return;
 
-    fd = findUser(fds, uid, size);
+    user = findUser(fds, uid, size);
 
-    code = fopCode(fourth);
+    if (user == ERROR) code = INV;
+    else code = fopCode(fourth);
 
     switch (code) {
         case LIST:
-            //list(fd);
+            list(user, uid);
             break;
         case RETRIEVE:
+            retrieve(user, uid, fifth);
             break;
         case UPLOAD:
             break;
         case DELETE:
+            delete(user, uid, fifth);
             break;
         case REMOVE:
+            removeUser(user, uid);
             break;
         case INV:
+            len = sprintf(message, "%s INV\n", operation);
+            writeTcp(user->fd, len, message);
             break;
     }
-    printf("%s", buffer);
+    return user;
 }
 
 
@@ -291,9 +303,207 @@ int fopCode(char *fop) {
 }
 
 
-int findUser(userinfo *fds, char *uid, int size) {
+userinfo findUser(userinfo *fds, char *uid, int size) {
     for (int i = 0; i < size; i++) {
-        if (strcmp(fds[i]->uid, uid) == 0) return fds[i]->fd;
+        if (strcmp(fds[i]->uid, uid) == 0) return fds[i];
     }
     return ERROR;
+}
+
+
+void list(userinfo user, char *uid) {
+    DIR *dUsers;
+    struct dirent *dir;
+    char path[32], files[1024], message[1024], temp[64];
+    int nfiles = 0, len;
+    off_t fsize;
+
+   memset(files, 0, sizeof(files));
+
+    dUsers = opendir("USERSF");
+    if (dUsers == NULL) {
+        len = sprintf(message, "RLS ERR\n");
+        writeTcp(user->fd, len, message);
+        return;
+    }
+    if (!searchDir(dUsers, dir, uid)) {
+        closedir(dUsers);
+        len = sprintf(message, "RLS EOF\n");
+        writeTcp(user->fd, len, message);
+        return;
+    }
+    closedir(dUsers);
+
+    sprintf(path, "USERSF/%s", uid);
+    dUsers = opendir(path);
+    if (dUsers == NULL) return; // eu sei que existe aqui
+    while ((dir = readdir(dUsers)) != NULL) {
+        nfiles++;
+        fsize = fileSize(dir->d_name);
+        sprintf(temp, " %s %lld", dir->d_name, fsize);
+        strcat(files, temp);
+    }
+    closedir(dUsers);
+    if (nfiles == 0) len = sprintf(message, "RLS EOF\n");
+    else len = sprintf(message, "RLS %d%s\n", nfiles, files);
+
+    writeTcp(user->fd, len, message);
+}
+
+
+int searchDir(DIR *d, struct dirent *dir, char *uid) {
+    while ((dir = readdir(d)) != NULL) {
+        if (strcmp(dir->d_name, uid) == 0) return 1;
+    }
+    return 0;
+}
+
+
+off_t fileSize(char *filename) {
+    struct stat st;
+
+    if (stat(filename, &st) == 0)
+        return st.st_size;
+
+    return ERROR;
+}
+
+
+void removeUser(userinfo user, char *uid) {
+    DIR *dUsers;
+    struct dirent *dir;
+    char path[32], message[16];
+    int len;
+
+    dUsers = opendir("USERSF");
+    if (dUsers == NULL) {
+        len = sprintf(message, "RRM NOK\n");
+        writeTcp(user->fd, len, message);
+        return;
+    }
+    if (!searchDir(dUsers, dir, uid)) {
+        closedir(dUsers);
+        len = sprintf(message, "RRM NOK\n");
+        writeTcp(user->fd, len, message);
+        return;
+    }
+    closedir(dUsers);
+
+    sprintf(path, "USERSF/%s", uid);
+    dUsers = opendir(path);
+    while((dir = readdir(dUsers)) != NULL) {
+        remove(dir->d_name);
+    }
+    closedir(dUsers);
+    rmdir(path);
+
+    len = sprintf(message, "RRM OK\n");
+    writeTcp(user->fd, len, message);
+}
+
+
+void delete(userinfo user, char *uid, char *fname) {
+    DIR *dUsers;
+    struct dirent *dir;
+    char path[32], message[16];
+    int len, deleted = 0;
+
+    dUsers = opendir("USERSF");
+    if (dUsers == NULL) {
+        len = sprintf(message, "RRM NOK\n");
+        writeTcp(user->fd, len, message);
+        return;
+    }
+    if (!searchDir(dUsers, dir, uid)) {
+        closedir(dUsers);
+        len = sprintf(message, "RRM NOK\n");
+        writeTcp(user->fd, len, message);
+        return;
+    }
+    closedir(dUsers);
+
+    sprintf(path, "USERSF/%s", uid);
+    dUsers = opendir(path);
+    while((dir = readdir(dUsers)) != NULL) {
+        if (strcmp(fname, dir->d_name) == 0) {
+            remove(dir->d_name);
+            deleted = 1;
+            break;
+        }
+    }
+    closedir(dUsers);
+
+    if (deleted) len = sprintf(message, "RDL OK\n");
+    else len = sprintf(message, "RDL EOF");
+
+    writeTcp(user->fd, len , message);
+}
+
+
+void retrieve(userinfo user, char *uid, char *fname) {
+    DIR *dUsers;
+    struct dirent *dir;
+    char path[32], message[64], buffer[1024];
+    int len, found = 0, empty = 1, nread = 0, nwritten = 0;
+    off_t fsize;
+    FILE *fptr;
+
+    dUsers = opendir("USERSF");
+    if (dUsers == NULL) {
+        len = sprintf(message, "RRT NOK\n");
+        writeTcp(user->fd, len, message);
+        return;
+    }
+    if (!searchDir(dUsers, dir, uid)) {
+        closedir(dUsers);
+        len = sprintf(message, "RRT NOK\n");
+        writeTcp(user->fd, len, message);
+        return;
+    }
+    closedir(dUsers);
+
+    sprintf(path, "USERSF/%s", uid);
+    dUsers = opendir(path);
+    while((dir = readdir(dUsers)) != NULL) {
+        empty = 0;
+        if (strcmp(fname, dir->d_name) == 0) {
+            found = 1;
+            break;
+        }
+    }
+    closedir(dUsers);
+
+    if (empty) {
+        len = sprintf(message, "RRT NOK\n");
+        writeTcp(user->fd, len, message);
+        return;
+    }
+    if (!found) {
+        len = sprintf(message, "RRT EOF\n");
+        writeTcp(user->fd, len, fname);
+        return;
+    }
+
+    sprintf(path, "USERSF/%s/%s", uid, fname);
+    fptr = fopen(path, "r");
+    if (fptr != NULL) {
+        len = sprintf(message, "RRT EOF\n");
+        writeTcp(user->fd, len, fname);
+        return;
+    }
+
+    fsize = fileSize(path);
+
+    len = sprintf(message, "RRT OK %lld ", fsize);
+    writeTcp(user->fd, len, message);
+
+    while (fsize > 0) {
+        nread = fread(buffer, sizeof(char), 1023, fptr); //verificar
+
+        nwritten = writeTcp(user->fd, nread, buffer); // verificar
+
+        fsize -= nwritten;
+    }
+    writeTcp(user->fd, 1, "\n");
+    fclose(fptr);
 }
