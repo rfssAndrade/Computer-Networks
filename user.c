@@ -121,8 +121,8 @@ void makeConnection() {
     // tv_as_w.tv_sec = 0;
     // tv_as_w.tv_usec = 100;
 
-    tv_fs_r.tv_sec = 0;
-    tv_fs_r.tv_usec = 100;
+    tv_fs_r.tv_sec = 1;
+    tv_fs_r.tv_usec = 0;
 
     // tv_fs_w.tv_sec = 0;
     // tv_fs_w.tv_usec = 100;
