@@ -506,7 +506,8 @@ void delete(userinfo user, char *uid, char *fname) {
     closedir(dUsers);
 
     sprintf(path, "USERSF/%s/%s", uid, fname);
-    if((len = remove(path)) == 0) deleted = 1;
+    len = remove(path);
+    if(len == 0) deleted = 1;
 
     if (deleted) len = sprintf(message, "RDL OK\n");
     else len = sprintf(message, "RDL EOF\n");
