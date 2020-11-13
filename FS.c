@@ -478,7 +478,8 @@ void delete(userinfo user, char *uid, char *fname) {
     dUsers = opendir(path);
     while((dir = readdir(dUsers)) != NULL) {
         if (strcmp(fname, dir->d_name) == 0) {
-            remove(dir->d_name);
+            sprintf(path, "USERSF/%s/%s", uid, fname);
+            remove(path);
             deleted = 1;
             break;
         }
