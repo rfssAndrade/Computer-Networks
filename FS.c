@@ -26,6 +26,12 @@ int parseMessageUser(char *buffer, char *message);
 userinfo parseMessageAS(char *buffer, char *message, userinfo *fds, int size);
 int fopCode(char *fop);
 userinfo findUser(userinfo *fds, char *uid, int size);
+void list(userinfo user, char *uid);
+int searchDir(DIR *d, struct dirent *dir, char *uid);
+off_t fileSize(char *filename);
+void removeUser(userinfo user, char *uid);
+void delete(userinfo user, char *uid, char *fname);
+void retrieve(userinfo user, char *uid, char *fname);
 
 
 int main(int argc, char **argv) {
@@ -156,11 +162,13 @@ void makeConnection() {
                     n = recvfrom(fd_udp, buffer, 128, 0, (struct sockaddr *)&addr, &addrlen);
                     if (n == ERROR) puts("ERROR");
                     user = parseMessageAS(buffer, message, fds, size);
-                    FD_CLR(user->fd, &inputs);
-                    close(user->fd);
-                    free(user->uid);
-                    free(user);
-                    user = NULL;
+                    if (user != NULL) {
+                        FD_CLR(user->fd, &inputs);
+                        close(user->fd);
+                        free(user->uid);
+                        free(user);
+                        user = NULL;
+                    }
                 }
                 
                 else if (FD_ISSET(fd_tcp, &testfds)) {
@@ -263,11 +271,11 @@ userinfo parseMessageAS(char *buffer, char *message, userinfo *fds, int size) {
     sscanf(buffer, "%s %s %s %s %s", operation, uid, third, fourth, fifth);
 
     code = verifyOperation(operation);
-    if (code != CNF || verifyUid(uid) != 0 || verifyTid(third) != 0 || verifyFop(fourth, fifth) != 0) return;
+    if (code != CNF || verifyUid(uid) != 0 || verifyTid(third) != 0 || verifyFop(fourth, fifth) != 0) return NULL;
 
     user = findUser(fds, uid, size);
 
-    if (user == ERROR) code = INV;
+    if (user == NULL) code = INV;
     else code = fopCode(fourth);
 
     switch (code) {
@@ -310,7 +318,7 @@ userinfo findUser(userinfo *fds, char *uid, int size) {
     for (int i = 0; i < size; i++) {
         if (strcmp(fds[i]->uid, uid) == 0) return fds[i];
     }
-    return ERROR;
+    return NULL;
 }
 
 
