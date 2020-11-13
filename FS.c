@@ -186,7 +186,7 @@ void makeConnection() {
                     new_fd = accept(fd_tcp, (struct sockaddr *)&addr, &addrlen);
                     if (new_fd == ERROR) exit(1); //mudar
 
-                    n = setsockopt(fd_tcp, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv_tcp_r, sizeof tv_tcp_r);
+                    n = setsockopt(new_fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv_tcp_r, sizeof tv_tcp_r);
                     if (n == -1) exit(1);
                     
                     FD_SET(new_fd, &inputs);
