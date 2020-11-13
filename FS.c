@@ -32,6 +32,8 @@ off_t fileSize(char *filename);
 void removeUser(userinfo user, char *uid);
 void delete(userinfo user, char *uid, char *fname);
 void retrieve(userinfo user, char *uid, char *fname);
+int upload(char *buffer, char *message, userinfo user);
+void removeFile(userinfo user, char *uid);
 
 
 int main(int argc, char **argv) {
@@ -99,10 +101,10 @@ void makeConnection() {
     int nextFreeEntry = 0;
     DIR *d;
     char buffer[128], message[128];
-    int len, code;
+    int len, code, nread;
     userinfo user;
     struct timeval tv_tcp_r, tv_udp_r;
-
+    char dummy[1024];
     tv_tcp_r.tv_sec = 0;
     tv_tcp_r.tv_usec = 100;
 
@@ -175,6 +177,7 @@ void makeConnection() {
                     if (user != NULL) {
                         FD_CLR(user->fd, &inputs);
                         close(user->fd);
+                        free(user->lastUploadedFile);
                         free(user->uid);
                         free(user);
                         user = NULL;
@@ -206,6 +209,14 @@ void makeConnection() {
 
                             code = verifyOperation(buffer);
                             if (code == UPLOAD) {
+                                n = readTcp(fds[i]->fd, 12, buffer + 3);
+                                len = upload(buffer, message, fds[i]);
+                                if (len < 9) {
+                                    nread = 1;
+                                    while (nread > 0) {
+                                        nread = readTcp(fds[i]->fd, 1023, dummy);
+                                    }
+                                }
                                 break;
                             }
                             else {
@@ -218,13 +229,14 @@ void makeConnection() {
                             if (n == SOCKET_ERROR) {
                                 FD_CLR(fds[i]->fd, &inputs);
                                 close(fds[i]->fd);
+                                free(fds[i]->lastUploadedFile);
                                 free(fds[i]->uid);
                                 free(fds[i]);
                                 fds[i] = NULL;
                                 break;
                             }
 
-                            if (len > 8) {
+                            if (len > 9) {
                                 code = sendto(fd_udp, message, strlen(message), 0, res_udp->ai_addr, res_udp->ai_addrlen); //mudar
                                 if (code == ERROR) puts("ERROR");
                             }
@@ -232,6 +244,7 @@ void makeConnection() {
                                 writeTcp(fds[i]->fd, len, message); // verificar
                                 FD_CLR(fds[i]->fd, &inputs);
                                 close(fds[i]->fd);
+                                free(fds[i]->lastUploadedFile);
                                 free(fds[i]->uid);
                                 free(fds[i]);
                                 fds[i] = NULL;
@@ -273,13 +286,6 @@ int parseMessageUser(char *buffer, char *message, userinfo user) {
                 strcpy(user->uid, uid);
             }
             break;
-        // case UPLOAD:
-        //     if (verifyUid(uid) != 0 || verifyTid(tid) != 0) len = sprintf(message, "RUP ERR\n");
-        //     else {
-        //         len = sprintf(message, "VLD %s %s\n", uid, tid);
-        //         strcpy(user->uid, uid);
-        //     }
-            break;
         case DELETE:
             if (verifyUid(uid) != 0 || verifyTid(tid) != 0 || verifyFname(fname) != 0) len = sprintf(message, "DEL ERR\n");
             else {
@@ -298,6 +304,7 @@ int parseMessageUser(char *buffer, char *message, userinfo user) {
             len = sprintf(message, "ERR\n");
             break;
     }
+    user->lastOp = code;
     return len;
 }
 
@@ -324,8 +331,6 @@ userinfo parseMessageAS(char *buffer, char *message, userinfo *fds, int size) {
         case RETRIEVE:
             retrieve(user, uid, fifth);
             break;
-        case UPLOAD:
-            break;
         case DELETE:
             delete(user, uid, fifth);
             break;
@@ -333,6 +338,7 @@ userinfo parseMessageAS(char *buffer, char *message, userinfo *fds, int size) {
             removeUser(user, uid);
             break;
         case INV:
+            if (user->lastOp == UPLOAD) removeFile(user, uid);
             len = sprintf(message, "%s INV\n", operation);
             writeTcp(user->fd, len, message);
             break;
@@ -475,16 +481,6 @@ void delete(userinfo user, char *uid, char *fname) {
     closedir(dUsers);
 
     sprintf(path, "USERSF/%s", uid);
-    dUsers = opendir(path);
-    while((dir = readdir(dUsers)) != NULL) {
-        if (strcmp(fname, dir->d_name) == 0) {
-            sprintf(path, "USERSF/%s/%s", uid, fname);
-            remove(path);
-            deleted = 1;
-            break;
-        }
-    }
-    closedir(dUsers);
 
     if (deleted) len = sprintf(message, "RDL OK\n");
     else len = sprintf(message, "RDL EOF");
@@ -559,4 +555,104 @@ void retrieve(userinfo user, char *uid, char *fname) {
     }
     writeTcp(user->fd, 1, "\n");
     fclose(fptr);
+}
+
+
+int upload(char *buffer, char *message, userinfo user) {
+    char  operation[4], uid[8], tid[8], fname[32], size[16];
+    char *ptr = size, path[32];
+    off_t fsize;
+    int nread = 0, len = 0, code, nfiles = 0, found = 0;
+    FILE *fptr;
+    DIR *dUsers;
+    struct dirent *dir;
+
+    sscanf(buffer, "%s %s %s %s", operation, uid, tid, fname);
+
+    while (1) {
+        nread  = readTcp(user->fd, 1, ptr);
+        if (nread <= 0) return nread;
+        ptr += nread;
+
+        if (*(ptr-1) == ' ') break;
+    }
+    *(ptr-1) = '\0';
+    fsize = atoi(size);
+    if (fsize == 0 || fsize > 999999999 || verifyUid(uid) != 0 || verifyTid(tid) != 0 || verifyFname(fname) != 0) {
+        len = sprintf(message, "RUP ERR\n");
+        return len;
+    }
+    
+    dUsers = opendir("USERSF");
+    if (dUsers == NULL) {
+        len = sprintf(message, "RUP NOK\n");
+        return len;
+    }
+    if (!searchDir(dUsers, dir, uid)) {
+        sprintf(path, "USERSF/%s", uid);
+        code = mkdir(path, 0777);
+        if (code == -1) {
+            closedir(dUsers);
+            len = sprintf(message, "RUP NOK\n");
+            return len;
+        }
+    }
+    closedir(dUsers);
+
+    dUsers = opendir(path);
+    while((dir = readdir(dUsers)) != NULL) {
+        nfiles++;
+        if (strcmp(fname, dir->d_name) == 0) {
+            found = 1;
+            break;
+        }
+    }
+    closedir(dUsers);
+    if (nfiles == 15) {
+        len = sprintf(message, "RUP FULL\n");
+        return len;
+    }
+    if (found) {
+        len = sprintf(message, "RUP DUP\n");
+        return len;
+    }
+
+    ptr = buffer;
+    sprintf(path, "USERSF/%s/%s", uid, fname);
+    fptr = fopen(path, "w");
+    if (fptr == NULL) {
+        len = sprintf(message, "RUP NOK\n");
+        return len;
+    }
+    while (fsize > 0) {
+        if (fsize < 127) nread  = readTcp(user->fd, fsize, ptr);
+        else nread  = readTcp(user->fd, 127, ptr);
+        if (nread < 0) {
+            fclose(fptr);
+            return nread;
+        }
+        fsize -= nread;
+        if (fsize == -1) {
+            ptr += nread - 1;
+            *ptr = EOF;
+        }
+        fwrite(buffer, sizeof(char), nread, fptr);
+        ptr = buffer;
+    }
+    len = sprintf(message, "VLD %s %s\n", uid, tid);
+    fclose(fptr);
+    strcpy(user->uid, uid);
+    memset(user->lastUploadedFile, 0, sizeof(user->lastUploadedFile));
+    strcpy(user->lastUploadedFile, fname);
+    user->lastOp = UPLOAD;
+
+    return len;
+}
+
+
+void removeFile(userinfo user, char *uid) {
+    char path[32];
+
+    sprintf(path, "USERSF/%s/%s", uid, user->lastUploadedFile);
+    remove(path);
 }

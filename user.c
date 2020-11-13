@@ -495,7 +495,7 @@ int parseAnswerFS(char *operation, int code, int fd) {
                 if (fSize == 0 || fSize > 999999999) printf("Invalid fSize: %d\n", fSize);
                 else {
                     ptr = buffer;
-                    fptr = fopen(fname, "wb");
+                    fptr = fopen(fname, "w");
                     if (fptr == NULL) {
                         printf("Error creating file %s\n", fname);
                         return ERROR;
@@ -504,7 +504,6 @@ int parseAnswerFS(char *operation, int code, int fd) {
                         if (fSize < 127) nread  = readTcp(fd, fSize, ptr);
                         else nread  = readTcp(fd, 127, ptr);
                         if (nread < 0) {
-                            puts("here");
                             fclose(fptr);
                             return nread;
                         }

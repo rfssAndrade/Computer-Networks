@@ -9,6 +9,8 @@ typedef struct userinfo {
     int fd;
     struct sockaddr_in addr;
     char *uid;
+    int lastOp;
+    char *lastUploadedFile;
 } *userinfo;
 
 
