@@ -317,7 +317,7 @@ int fopCode(char *fop) {
 
 userinfo findUser(userinfo *fds, char *uid, int size) {
     for (int i = 0; i < size; i++) {
-        if (strcmp(fds[i]->uid, uid) == 0) return fds[i];
+        if (fds[i] != NULL && strcmp(fds[i]->uid, uid) == 0) return fds[i];
     }
     return NULL;
 }
