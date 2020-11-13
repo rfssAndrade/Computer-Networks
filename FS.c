@@ -101,6 +101,13 @@ void makeConnection() {
     char buffer[128], message[128];
     int len, code;
     userinfo user;
+    struct timeval tv_tcp_r, tv_udp_r;
+
+    tv_tcp_r.tv_sec = 0;
+    tv_tcp_r.tv_usec = 100;
+
+    tv_udp_r.tv_sec = 0;
+    tv_udp_r.tv_usec = 100;
 
     if ((d = opendir("USERSF")) == NULL) {
         n = mkdir("USERSF", 0777);
@@ -114,6 +121,9 @@ void makeConnection() {
 
     fd_udp = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd_udp == -1) exit(1);
+
+    n = setsockopt(fd_udp, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv_udp_r, sizeof tv_udp_r);
+    if (n == -1) exit(1);
 
     fd_tcp = socket(AF_INET, SOCK_STREAM, 0);
     if (fd_tcp == -1) exit(1);
@@ -175,6 +185,10 @@ void makeConnection() {
                     addrlen = sizeof(addr);
                     new_fd = accept(fd_tcp, (struct sockaddr *)&addr, &addrlen);
                     if (new_fd == ERROR) exit(1); //mudar
+
+                    n = setsockopt(fd_tcp, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv_tcp_r, sizeof tv_tcp_r);
+                    if (n == -1) exit(1);
+                    
                     FD_SET(new_fd, &inputs);
                     fds[nextFreeEntry] = createUserinfo(new_fd, addr);
                     nextFreeEntry = findNextFreeEntry(fds, size);

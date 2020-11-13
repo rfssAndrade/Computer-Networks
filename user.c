@@ -118,14 +118,14 @@ void makeConnection() {
     tv_as_r.tv_sec = 0;
     tv_as_r.tv_usec = 100;
 
-    tv_as_w.tv_sec = 0;
-    tv_as_r.tv_usec = 100;
+    // tv_as_w.tv_sec = 0;
+    // tv_as_w.tv_usec = 100;
 
     tv_fs_r.tv_sec = 0;
     tv_fs_r.tv_usec = 100;
 
-    tv_fs_w.tv_sec = 0;
-    tv_fs_w.tv_usec = 100;
+    // tv_fs_w.tv_sec = 0;
+    // tv_fs_w.tv_usec = 100;
 
     fd_as = socket(AF_INET, SOCK_STREAM, 0);
     if (fd_as == -1) exit(1);
@@ -185,7 +185,7 @@ void makeConnection() {
 
                     //n = setsockopt(fd_fs, SOL_SOCKET, SO_SNDTIMEO, (const char*)&tv_fs_r, sizeof tv_fs_r);
                     //if (n == -1) exit(1); // change
-                    n = setsockopt(fd_fs, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv_fs_w, sizeof tv_fs_w);
+                    n = setsockopt(fd_fs, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv_fs_r, sizeof tv_fs_r);
                     if (n == -1) exit(1); // change
 
                     n = connect(fd_fs, res_fs->ai_addr, res_fs->ai_addrlen);
