@@ -22,7 +22,7 @@ int verbose = 0;
 
 void parseArgs(int argc, char **argv);
 void makeConnection();
-int parseMessageUser(char *buffer, char *message);
+int parseMessageUser(char *buffer, char *message, userinfo user);
 userinfo parseMessageAS(char *buffer, char *message, userinfo *fds, int size);
 int fopCode(char *fop);
 userinfo findUser(userinfo *fds, char *uid, int size);
@@ -200,7 +200,7 @@ void makeConnection() {
                                 break;
                             }
 
-                            len = parseMessageUser(buffer, message);
+                            len = parseMessageUser(buffer, message, fds[i]);
                             if (len > 8) {
                                 code = sendto(fd_udp, message, strlen(message), 0, res_udp->ai_addr, res_udp->ai_addrlen); //mudar
                                 if (code == ERROR) puts("ERROR");
@@ -228,7 +228,7 @@ void makeConnection() {
 }
 
 
-int parseMessageUser(char *buffer, char *message) {
+int parseMessageUser(char *buffer, char *message, userinfo user) {
     int code, len;
     char  operation[4], uid[8], tid[8];
 
@@ -238,23 +238,38 @@ int parseMessageUser(char *buffer, char *message) {
     switch (code) {
         case LIST:
             if (verifyUid(uid) != 0 || verifyTid(tid) != 0) len = sprintf(message, "RLS ERR\n");
-            else len = sprintf(message, "VLD %s %s\n", uid, tid);
+            else {
+                len = sprintf(message, "VLD %s %s\n", uid, tid);
+                strcpy(user->uid, uid);
+            }
             break;
         case RETRIEVE:
             if (verifyUid(uid) != 0 || verifyTid(tid) != 0) len = sprintf(message, "RRT ERR\n");
-            else len = sprintf(message, "VLD %s %s\n", uid, tid);
+            else {
+                len = sprintf(message, "VLD %s %s\n", uid, tid);
+                strcpy(user->uid, uid);
+            }
             break;
         case UPLOAD:
             if (verifyUid(uid) != 0 || verifyTid(tid) != 0) len = sprintf(message, "RUP ERR\n");
-            else len = sprintf(message, "VLD %s %s\n", uid, tid);
+            else {
+                len = sprintf(message, "VLD %s %s\n", uid, tid);
+                strcpy(user->uid, uid);
+            }
             break;
         case DELETE:
             if (verifyUid(uid) != 0 || verifyTid(tid) != 0) len = sprintf(message, "DEL ERR\n");
-            else len = sprintf(message, "VLD %s %s\n", uid, tid);
+            else {
+                len = sprintf(message, "VLD %s %s\n", uid, tid);
+                strcpy(user->uid, uid);
+            }
             break;
         case REMOVE:
             if (verifyUid(uid) != 0 || verifyTid(tid) != 0) len = sprintf(message, "REM ERR\n");
-            else len = sprintf(message, "VLD %s %s\n", uid, tid);
+            else {
+                len = sprintf(message, "VLD %s %s\n", uid, tid);
+                strcpy(user->uid, uid);
+            }
             break;
         default:
             len = sprintf(message, "ERR\n");
