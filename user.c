@@ -205,7 +205,7 @@ void makeConnection() {
                 if (verifyAnswerAS(answer) != 0) parseAnswerAS(answer, command, second);
             }
             else if (fd_fs != -1 && FD_ISSET(fd_fs, &testfds)) {
-                readMessageFS(fd_fs);
+                code = readMessageFS(fd_fs);
                 FD_CLR(fd_fs, &inputs);
                 close(fd_fs);
                 fd_fs = -1;
@@ -213,7 +213,7 @@ void makeConnection() {
             }
             break;
         }
-        if (code == EXIT || code == SOCKET_ERROR || code == REMOVE) break;
+        if (code == EXIT || code == SOCKET_ERROR) break;
     }
 
     freeaddrinfo(res_as);
@@ -411,11 +411,6 @@ int verifyAnswerFS(char *answer) {
     else if (strcmp(answer, "RDL NOK\n") == 0) printf("UID doesn't exist: %s", answer);
     else if (strcmp(answer, "RDL INV\n") == 0) printf("Invalid TID: %s", answer);
     else if (strcmp(answer, "RDL ERR\n") == 0) printf("Invalid delete request format: %s", answer);
-    else if (strcmp(answer, "RRM OK\n") == 0) printf("Remove request approved: %s", answer);
-    else if (strcmp(answer, "RRM NOK\n") == 0) printf("UID doesn't exist: %s", answer);
-    else if (strcmp(answer, "RRM INV\n") == 0) printf("Invalid TID: %s", answer);
-    else if (strcmp(answer, "RRM ERR\n") == 0) printf("Invalid remove request format: %s", answer);
-    else if (strcmp(answer, "RRT NOK\n") == 0) printf("No content available for UID: %s", answer);
     else if (strcmp(answer, "RRT EOF\n") == 0) printf("File not available: %s", answer);
     else if (strcmp(answer, "RRT INV\n") == 0) printf("Wrong TID: %s", answer);
     else if (strcmp(answer, "RRT ERR\n") == 0) printf("Invalid request format: %s", answer);
@@ -423,6 +418,23 @@ int verifyAnswerFS(char *answer) {
     else if (strcmp(answer, "RLS INV\n") == 0) printf("Wrong TID: %s", answer);
     else if (strcmp(answer, "RLS ERR\n") == 0) printf("Invalid request format: %s", answer);
     else if (strcmp(answer, "ERR\n") == 0) printf("ERROR: %s\n", answer);
+    else if (strcmp(answer, "RRM OK\n") == 0) {
+        printf("Remove request approved: %s", answer);
+        return EXIT;
+    }
+    else if (strcmp(answer, "RRM NOK\n") == 0) {
+        printf("UID doesn't exist: %s", answer);
+        return EXIT;
+    }
+    else if (strcmp(answer, "RRM INV\n") == 0) {
+        printf("Invalid TID: %s", answer);
+        return EXIT;
+    }
+    else if (strcmp(answer, "RRM ERR\n") == 0) {
+        printf("Invalid remove request format: %s", answer);
+        return EXIT;
+    }
+    else if (strcmp(answer, "RRT NOK\n") == 0) printf("No content available for UID: %s", answer);
     else printf("ERROR: %s\n", answer);
 
     return 0;
