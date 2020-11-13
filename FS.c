@@ -460,7 +460,8 @@ void removeUser(userinfo user, char *uid) {
     sprintf(path, "USERSF/%s", uid);
     dUsers = opendir(path);
     while((dir = readdir(dUsers)) != NULL) {
-        remove(dir->d_name);
+        sprintf(path, "USERSF/%s/%s", uid, dir->d_name);
+        remove(path);
     }
     closedir(dUsers);
     rmdir(path);
