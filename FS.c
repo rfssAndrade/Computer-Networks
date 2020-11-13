@@ -188,7 +188,7 @@ void makeConnection() {
 
                     n = setsockopt(fd_tcp, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv_tcp_r, sizeof tv_tcp_r);
                     if (n == -1) exit(1);
-                    
+
                     FD_SET(new_fd, &inputs);
                     fds[nextFreeEntry] = createUserinfo(new_fd, addr);
                     nextFreeEntry = findNextFreeEntry(fds, size);
@@ -202,16 +202,16 @@ void makeConnection() {
                 else {
                     for (int i = 0; i < size; i++) {
                         if (fds[i] != NULL && fds[i]->fd != 0 && FD_ISSET(fds[i]->fd, &testfds)) {
-                            n = readTcp(fds[i]->fd, 3, buffer);
+                            n = readTcp(fds[i]->fd, 15, buffer); //mudar 3
 
-                            code = verifyOperation(buffer);
-                            if (code == UPLOAD) {
-                                break;
-                            }
-                            else {
-                                n = readTcp(fds[i]->fd, 124, buffer + 3);
-                                len = parseMessageUser(buffer, message, fds[i]);
-                            }
+                            // code = verifyOperation(buffer);
+                            // if (code == UPLOAD) {
+                            //     break;
+                            // }
+                            // else {
+                            //     n = readTcp(fds[i]->fd, 124, buffer + 3);
+                            //     len = parseMessageUser(buffer, message, fds[i]);
+                            // }
                             
 
                             if (n == -1) break;
@@ -224,6 +224,7 @@ void makeConnection() {
                                 break;
                             }
 
+                            len = parseMessageUser(buffer, message, fds[i]); //maybe mudar
                             if (len > 8) {
                                 code = sendto(fd_udp, message, strlen(message), 0, res_udp->ai_addr, res_udp->ai_addrlen); //mudar
                                 if (code == ERROR) puts("ERROR");
