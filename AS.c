@@ -15,7 +15,7 @@
 #include "message.h"
 
 
-char * ASport = NULL;
+char *ASport = NULL;
 int verbose = 0;
 userinfo *fds = NULL;
 int size = 1; // mudar
@@ -95,7 +95,7 @@ void makeConnection() {
     int elapsedTime = 0;
     char message[32];
 
-    *fds = calloc(size, sizeof(struct userinfo));
+    fds = calloc(size, sizeof(struct userinfo));
 
     tv_tcp_r.tv_sec = 1;
     tv_tcp_r.tv_usec = 0;
@@ -163,7 +163,7 @@ void makeConnection() {
             default:    
                 memset(buffer, 0, sizeof(buffer));
                 memset(message, 0, sizeof(message));
-                
+
                 if (FD_ISSET(fd_udp, &testfds)) {
                     n = readMessageUdp(fd_udp, buffer, &addr);
                     if (n == -1) break;
