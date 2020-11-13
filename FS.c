@@ -314,7 +314,7 @@ userinfo parseMessageAS(char *buffer, char *message, userinfo *fds, int size) {
 
     user = findUser(fds, uid, size);
 
-    if (user == NULL) code = INV;
+    if (user == NULL) code = NULL;
     else code = fopCode(fourth);
 
     switch (code) {
@@ -538,7 +538,7 @@ void retrieve(userinfo user, char *uid, char *fname) {
 
     sprintf(path, "USERSF/%s/%s", uid, fname);
     fptr = fopen(path, "r");
-    if (fptr != NULL) {
+    if (fptr == NULL) {
         len = sprintf(message, "RRT EOF\n");
         writeTcp(user->fd, len, fname);
         return;
