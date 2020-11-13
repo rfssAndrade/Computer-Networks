@@ -28,6 +28,7 @@ int readMessageUdp(int fd, char *buffer, struct sockaddr_in *addr);
 void parseMessage(char *buffer, userinfo user, int fd_udp, struct sockaddr_in addr);
 int formatMessage(int codeOperation, int codeStatus, char *message);
 void sendMessageUdp(int fd, char *message, int len, struct sockaddr_in addr);
+void sendMessageUdpClient(int fd, char *message, int len, struct addrinfo *res);
 int searchDir(DIR *d, struct dirent *dir, char *uid);
 int registerUser(char *uid, char *pass, char *PDIP, char *PDport);
 int unregisterUser(char *uid, char *pass);
@@ -294,7 +295,7 @@ void parseMessage(char *buffer, userinfo user, int fd_udp, struct sockaddr_in ad
                 else len = sprintf(message, "VLC %s %04d %s\n", uid, vc, fourth);
                 user->waitingForPd = 1;
                 gettimeofday(&user->t, NULL);
-                sendMessageUdp(fd_udp, message, len, addr);
+                sendMessageUdpClient(fd_udp, message, len, res);
             }
             break;
 
@@ -432,6 +433,17 @@ void sendMessageUdp(int fd, char *message, int len, struct sockaddr_in addr) {
         port = ntohs(addr.sin_port);
         printf("SENT TO %s %u: %s\n", ip, port, message);
     }
+}
+
+
+void sendMessageUdpClient(int fd, char *message, int len, struct addrinfo *res) {
+    int code;
+    char ip[INET_ADDRSTRLEN];
+    unsigned int port;
+
+    code = sendto(fd, message, len, 0, res->ai_addr, res->ai_addrlen);
+    if (code == ERROR) puts("Error on send\n");
+    printf("%s", message);
 }
 
 
