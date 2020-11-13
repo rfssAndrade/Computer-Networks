@@ -205,13 +205,14 @@ void makeConnection() {
                                 code = sendto(fd_udp, message, strlen(message), 0, res_udp->ai_addr, res_udp->ai_addrlen); //mudar
                                 if (code == ERROR) puts("ERROR");
                             }
-                            else writeTcp(fds[i]->fd, len, message); // verificar
-
-                            FD_CLR(fds[i]->fd, &inputs);
-                            close(fds[i]->fd);
-                            free(fds[i]->uid);
-                            free(fds[i]);
-                            fds[i] = NULL;
+                            else {
+                                writeTcp(fds[i]->fd, len, message); // verificar
+                                FD_CLR(fds[i]->fd, &inputs);
+                                close(fds[i]->fd);
+                                free(fds[i]->uid);
+                                free(fds[i]);
+                                fds[i] = NULL;
+                            }
 
                             break;
                         }
