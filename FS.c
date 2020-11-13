@@ -148,6 +148,9 @@ void makeConnection() {
                 break;
 
             default:
+                memset(buffer, 0, sizeof(buffer));
+                memset(message, 0, sizeof(message));
+
                 if (FD_ISSET(fd_udp, &testfds)) {
                     addrlen = sizeof(addr);
                     n = recvfrom(fd_udp, buffer, 128, 0, (struct sockaddr *)&addr, &addrlen);
@@ -256,7 +259,7 @@ userinfo parseMessageAS(char *buffer, char *message, userinfo *fds, int size) {
     int code, len;
     userinfo user;
     char operation[4], uid[6], third[9], fourth[16], fifth[26];
-
+    printf("RECEIVED: %s", buffer);
     sscanf(buffer, "%s %s %s %s %s", operation, uid, third, fourth, fifth);
 
     code = verifyOperation(operation);
