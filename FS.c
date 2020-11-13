@@ -218,7 +218,6 @@ void makeConnection() {
                                         nread = readTcp(fds[i]->fd, 1023, dummy);
                                     }
                                 }
-                                break;
                             }
                             else {
                                 n = readTcp(fds[i]->fd, 124, buffer + 3);
