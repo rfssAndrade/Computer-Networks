@@ -464,6 +464,7 @@ void removeUser(userinfo user, char *uid) {
         remove(path);
     }
     closedir(dUsers);
+    sprintf(path, "USERSF/%s", uid);
     rmdir(path);
 
     len = sprintf(message, "RRM OK\n");
