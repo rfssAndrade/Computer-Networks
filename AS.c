@@ -204,7 +204,7 @@ void makeConnection() {
                                 fds[i] = NULL;
                                 break;
                             }
-                            parseMessage(buffer, fds[i], -1, addr);
+                            parseMessage(buffer, fds[i], fd_udp, addr);
                             break;
                         }
                     }
