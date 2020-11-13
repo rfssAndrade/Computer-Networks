@@ -205,7 +205,7 @@ void makeConnection() {
                 if (verifyAnswerAS(answer) != 0) parseAnswerAS(answer, command, second);
             }
             else if (fd_fs != -1 && FD_ISSET(fd_fs, &testfds)) {
-                code = readMessageFS(fd_fs);
+                readMessageFS(fd_fs);
                 FD_CLR(fd_fs, &inputs);
                 close(fd_fs);
                 fd_fs = -1;
