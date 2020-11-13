@@ -153,7 +153,7 @@ void makeConnection() {
                     if (new_fd == ERROR) exit(1); //mudar
                     FD_SET(new_fd, &inputs);
 
-                    fds[nextFreeEntry] = createSockinfo(new_fd, addr);
+                    fds[nextFreeEntry] = createuserinfo(new_fd, addr);
                     nextFreeEntry = findNextFreeEntry(fds, size);
                     if (nextFreeEntry == size) {
                         fds = realloc(fds, (size * 2) * sizeof(userinfo));
