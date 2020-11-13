@@ -187,7 +187,7 @@ void makeConnection() {
 
                 else {
                     for (int i = 0; i < size; i++) {
-                        if (fds[i]->fd != 0 && FD_ISSET(fds[i]->fd, &testfds)) {
+                        if (fds[i] != NULL && fds[i]->fd != 0 && FD_ISSET(fds[i]->fd, &testfds)) {
                             n = readTcp(fds[i]->fd, 15, buffer);
 
                             if (n == -1) break;
