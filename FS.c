@@ -223,18 +223,6 @@ void makeConnection() {
                                 n = readTcp(fds[i]->fd, 124, buffer + 3);
                                 len = parseMessageUser(buffer, message, fds[i]);
                             }
-                            
-
-                            // if (n == -1) break;
-                            // if (n == SOCKET_ERROR) {
-                            //     FD_CLR(fds[i]->fd, &inputs);
-                            //     close(fds[i]->fd);
-                            //     free(fds[i]->lastUploadedFile);
-                            //     free(fds[i]->uid);
-                            //     free(fds[i]);
-                            //     fds[i] = NULL;
-                            //     break;
-                            // }
 
                             if (len > 9) {
                                 code = sendto(fd_udp, message, strlen(message), 0, res_udp->ai_addr, res_udp->ai_addrlen); //mudar
@@ -670,6 +658,8 @@ int upload(char *buffer, char *message, userinfo user) {
         fwrite(buffer, sizeof(char), nread, fptr);
         ptr = buffer;
     }
+    ptr = buffer;
+    readTcp(user->fd, 1, ptr);
     len = sprintf(message, "VLD %s %s\n", uid, tid);
     fclose(fptr);
     strcpy(user->uid, uid);
