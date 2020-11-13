@@ -226,16 +226,16 @@ void makeConnection() {
                             }
                             
 
-                            if (n == -1) break;
-                            if (n == SOCKET_ERROR) {
-                                FD_CLR(fds[i]->fd, &inputs);
-                                close(fds[i]->fd);
-                                free(fds[i]->lastUploadedFile);
-                                free(fds[i]->uid);
-                                free(fds[i]);
-                                fds[i] = NULL;
-                                break;
-                            }
+                            // if (n == -1) break;
+                            // if (n == SOCKET_ERROR) {
+                            //     FD_CLR(fds[i]->fd, &inputs);
+                            //     close(fds[i]->fd);
+                            //     free(fds[i]->lastUploadedFile);
+                            //     free(fds[i]->uid);
+                            //     free(fds[i]);
+                            //     fds[i] = NULL;
+                            //     break;
+                            // }
 
                             if (len > 9) {
                                 code = sendto(fd_udp, message, strlen(message), 0, res_udp->ai_addr, res_udp->ai_addrlen); //mudar
