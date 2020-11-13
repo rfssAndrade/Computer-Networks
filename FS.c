@@ -267,10 +267,28 @@ void makeConnection() {
 
 int parseMessageUser(char *buffer, char *message, userinfo user) {
     int code, len;
-    char  operation[4], uid[8], tid[8], fname[32];
+    char  operation[4], uid[8], tid[8], fname[32], path[32];
+    DIR *dUsers;
+    struct dirent *dir;
 
     sscanf(buffer, "%s %s %s %s", operation, uid, tid, fname);
     code = verifyOperation(operation);
+
+    dUsers = opendir("USERSF");
+    if (dUsers == NULL) {
+        len = sprintf(message, "%s NOK\n", operation);
+        return len;
+    }
+    sprintf(path, "USERSF/%s", uid);
+    if (!searchDir(dUsers, dir, uid)) {
+        code = mkdir(path, 0777);
+        if (code == -1) {
+            closedir(dUsers);
+            len = sprintf(message, "%s NOK\n", operation);
+            return len;
+        }
+    }
+    closedir(dUsers);
 
     switch (code) {
         case LIST:
@@ -599,8 +617,8 @@ int upload(char *buffer, char *message, userinfo user) {
         len = sprintf(message, "RUP NOK\n");
         return len;
     }
+    sprintf(path, "USERSF/%s", uid);
     if (!searchDir(dUsers, dir, uid)) {
-        sprintf(path, "USERSF/%s", uid);
         code = mkdir(path, 0777);
         if (code == -1) {
             closedir(dUsers);
