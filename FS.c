@@ -561,15 +561,25 @@ void retrieve(userinfo user, char *uid, char *fname) {
 
 int upload(char *buffer, char *message, userinfo user) {
     char  operation[4], uid[8], tid[8], fname[32], size[16];
-    char *ptr = size, path[32];
+    char *ptr = fname, path[32];
     off_t fsize;
     int nread = 0, len = 0, code, nfiles = 0, found = 0;
     FILE *fptr;
     DIR *dUsers;
     struct dirent *dir;
 
-    sscanf(buffer, "%s %s %s %s", operation, uid, tid, fname);
+    sscanf(buffer, "%s %s %s", operation, uid, tid);
 
+    while (1) {
+        nread  = readTcp(user->fd, 1, ptr);
+        if (nread <= 0) return nread;
+        ptr += nread;
+
+        if (*(ptr-1) == ' ') break;
+    }
+    *(ptr-1) = '\0';
+
+    ptr = fsize;
     while (1) {
         nread  = readTcp(user->fd, 1, ptr);
         if (nread <= 0) return nread;
@@ -628,10 +638,10 @@ int upload(char *buffer, char *message, userinfo user) {
     while (fsize > 0) {
         if (fsize < 127) nread  = readTcp(user->fd, fsize, ptr);
         else nread  = readTcp(user->fd, 127, ptr);
-        // if (nread < 0) {
-        //     fclose(fptr);
-        //     return nread;
-        // }
+        if (nread < 0) {
+            fclose(fptr);
+            return nread;
+        }
         fsize -= nread;
         if (fsize == -1) {
             ptr += nread - 1;
