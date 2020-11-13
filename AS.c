@@ -14,6 +14,7 @@
 #include "userinfo.h"
 #include "message.h"
 
+extern int errno;
 
 char *ASport = NULL;
 int verbose = 0;
