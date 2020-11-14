@@ -235,7 +235,7 @@ void makeConnection() {
                                 free(fds[i]);
                                 fds[i] = NULL;
                             }
-
+                            printf("SENT: %s", message);
                             break;
                         }
                     }
@@ -351,6 +351,7 @@ userinfo parseMessageAS(char *buffer, char *message, userinfo *fds, int size) {
             writeTcp(user->fd, len, message);
             break;
     }
+    printf("SENT: %s", message); // debug
     return user;
 }
 

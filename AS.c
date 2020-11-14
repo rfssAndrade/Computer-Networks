@@ -296,6 +296,7 @@ void parseMessage(char *buffer, userinfo user, int fd_udp, struct sockaddr_in ad
             else writeTcp(user->fd, len, message);;
             break;
     }
+    printf("SENT: %s", message); //debug
 }
 
 
@@ -641,7 +642,7 @@ int validateOperation(char *uid, char *tid, char *message) {
         return len;
     }
 
-    if (nread == 3) len = sprintf(message, "CNF %s %s %s %s\n", uid, tid, fop, fname);
+    if (nread == 3) len = sprintf(message, "CNF %s %s %s %s\n", uid, tid, fop, fname); // ver isto
     else len = sprintf(message, "CNF %s %s %s\n", uid, tid, fop);
 
     if (fopCode(fop) == REMOVE) {
