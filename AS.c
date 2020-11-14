@@ -242,8 +242,7 @@ void parseMessage(char *buffer, userinfo user, int fd_udp, struct sockaddr_in ad
             break;
         
         case EXIT:
-            if (user->uid != NULL && strcmp(user->uid, uid) != 0) codeStatus = NOK;
-            else codeStatus = unregisterUser(uid, third);
+            codeStatus = unregisterUser(uid, third);
             len = formatMessage(codeOperation, codeStatus, message);
             sendMessageUdp(fd_udp, message, len, addr);
             break;
