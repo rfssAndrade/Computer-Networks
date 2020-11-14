@@ -242,7 +242,7 @@ void parseMessage(char *buffer, userinfo user, int fd_udp, struct sockaddr_in ad
             break;
         
         case EXIT:
-            if (strcmp(user->uid, uid) != 0) codeStatus = NOK;
+            if (user->uid != NULL && strcmp(user->uid, uid) != 0) codeStatus = NOK;
             else codeStatus = unregisterUser(uid, third);
             len = formatMessage(codeOperation, codeStatus, message);
             sendMessageUdp(fd_udp, message, len, addr);
@@ -251,7 +251,7 @@ void parseMessage(char *buffer, userinfo user, int fd_udp, struct sockaddr_in ad
         case RVC:
             codeStatus = rvc(third);
             user = findUser(fds, uid, size);
-            if (user == NULL || strcmp(user->uid, uid) != 0) codeStatus = NOK;
+            if (user == NULL || (user->uid != NULL && strcmp(user->uid, uid)) != 0) codeStatus = NOK;
             len = formatMessage(codeOperation, codeStatus, message);
             user->waitingForPd = 0;
             writeTcp(user->fd, len, message);;
@@ -264,7 +264,7 @@ void parseMessage(char *buffer, userinfo user, int fd_udp, struct sockaddr_in ad
             break;
 
         case REQ:
-            if (strcmp(user->uid, uid) != 0) codeStatus = EUSER;
+            if (user->uid != NULL && strcmp(user->uid, uid) != 0) codeStatus = EUSER;
             else codeStatus = approveRequest(uid, third, fourth, fifth, &vc, &res);
             if (codeStatus != OK) {
                 len = formatMessage(codeOperation, codeStatus, message);
@@ -280,7 +280,7 @@ void parseMessage(char *buffer, userinfo user, int fd_udp, struct sockaddr_in ad
             break;
 
         case VAL:
-            if (strcmp(user->uid, uid) != 0) codeStatus = 0;
+            if (user->uid != NULL && strcmp(user->uid, uid) != 0) codeStatus = 0;
             else codeStatus = validateUser(uid, third, fourth);
             len = formatMessage(codeOperation, codeStatus, message);
             writeTcp(user->fd, len, message);;

@@ -11,8 +11,10 @@ userinfo createUserinfo(int fd, struct sockaddr_in addr) {
     new->fd = fd;
     memcpy(&new->addr, &addr, sizeof(addr));
     new->uid = calloc(6, sizeof(char));
+    new->uid = NULL;
     new->lastOp = 0;
     new->lastUploadedFile = calloc(26, sizeof(char));
+    new->lastUploadedFile = NULL;
     new->waitingForPd = 0;
 
     return new;
