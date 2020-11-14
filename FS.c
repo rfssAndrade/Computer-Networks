@@ -201,8 +201,8 @@ void makeConnection() {
                         if (fds[i] != NULL && fds[i]->fd != 0 && FD_ISSET(fds[i]->fd, &testfds)) {
                             n = readTcp(fds[i]->fd, 3, buffer);
                             if (verbose) {
-                                inet_ntop(AF_INET, &user->addr.sin_addr, ip, sizeof(ip));
-                                port = ntohs(user->addr.sin_port);
+                                inet_ntop(AF_INET, &fds[i]->addr.sin_addr, ip, sizeof(ip));
+                                port = ntohs(fds[i]->addr.sin_port);
                                 printf("RECEIVED FROM %s %u: %s\n", ip, port, buffer);
                             }
 
