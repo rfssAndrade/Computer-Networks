@@ -622,7 +622,7 @@ int validateUser(char *uid, char *rid, char *vc) {
 int validateOperation(char *uid, char *tid, char *message) {
     FILE *fptr;
     char path[64], buffer[128], localTid[8], fop[4], fname[32];
-    int len, nread;
+    int len, nread, fopC;
     userinfo user;
 
     sprintf(path, "USERS/%s/tid.txt", uid);
@@ -641,8 +641,9 @@ int validateOperation(char *uid, char *tid, char *message) {
         len = sprintf(message, "CNF %s %s E\n", uid, tid);
         return len;
     }
-
-    if (nread == 3) len = sprintf(message, "CNF %s %s %s %s\n", uid, tid, fop, fname); // ver isto
+    
+    fopC = fopCode(fop);
+    if (fopC != LIST || fopC != REMOVE) len = sprintf(message, "CNF %s %s %s %s\n", uid, tid, fop, fname); // ver isto
     else len = sprintf(message, "CNF %s %s %s\n", uid, tid, fop);
 
     if (fopCode(fop) == REMOVE) {
