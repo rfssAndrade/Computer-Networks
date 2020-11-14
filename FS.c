@@ -542,7 +542,7 @@ void retrieve(userinfo user, char *uid, char *fname) {
     }
     if (!found) {
         len = sprintf(message, "RRT EOF\n");
-        writeTcp(user->fd, len, fname);
+        writeTcp(user->fd, len, message);
         return;
     }
 
@@ -550,7 +550,7 @@ void retrieve(userinfo user, char *uid, char *fname) {
     fptr = fopen(path, "r");
     if (fptr == NULL) {
         len = sprintf(message, "RRT EOF\n");
-        writeTcp(user->fd, len, fname);
+        writeTcp(user->fd, len, message);
         return;
     }
 
