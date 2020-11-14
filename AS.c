@@ -13,34 +13,14 @@
 #include "verify.h"
 #include "userinfo.h"
 #include "message.h"
+#include "AS.h"
 
 
 char *ASport = NULL;
 int verbose = 0;
 userinfo *fds = NULL;
-int size = 1; // mudar
+int size = 20;
 fd_set inputs;
-
-
-void parseArgs(int argc, char **argv);
-void makeConnection();
-int readMessageUdp(int fd, char *buffer, struct sockaddr_in *addr);
-void parseMessage(char *buffer, userinfo user, int fd_udp, struct sockaddr_in addr);
-int formatMessage(int codeOperation, int codeStatus, char *message);
-void sendMessageUdp(int fd, char *message, int len, struct sockaddr_in addr);
-void sendMessageUdpClient(int fd, char *message, int len, struct addrinfo *res);
-int searchDir(DIR *d, struct dirent *dir, char *uid);
-int registerUser(char *uid, char *pass, char *PDIP, char *PDport);
-int unregisterUser(char *uid, char *pass);
-void sendMessageTcp(userinfo user, char *message, int len);
-int readMessageTcp(userinfo user, char *buffer);
-int loginUser(char *uid, char *pass, userinfo userinfo);
-void logoutUser(char *uid);
-int approveRequest(char *uid, char *rid, char *fop, char *fname, int *vc, struct addrinfo **res);
-int rvc(char *uid, char *status);
-int validateUser(char *uid, char *rid, char *vc);
-int validateOperation(char *uid, char *tid, char *message);
-void removeUser(char *uid);
 
 
 int main(int argc, char **argv) {
@@ -70,7 +50,6 @@ void parseArgs(int argc, char ** argv) {
                 i++;
                 break;
             default:
-                printf("Bad argument\n");
                 exit(1);
                 break;
         }
@@ -89,7 +68,7 @@ void makeConnection() {
     fd_set testfds;
     struct sigaction action;
     int nextFreeEntry = 0;
-    int code, len;
+    int len;
     char buffer[128];
     DIR *d;
     struct timeval tv_tcp_r, tv_udp_r, t2;
@@ -106,22 +85,22 @@ void makeConnection() {
 
     if ((d = opendir("USERS")) == NULL) {
         n = mkdir("USERS", 0777);
-        if (n == -1) exit(1);
+        if (n == ERROR) exit(1);
     }
     else closedir(d);
 
     memset(&action, 0, sizeof action);
     action.sa_handler = SIG_IGN;
-    if (sigaction(SIGPIPE, &action, NULL) == -1) exit(1);
+    if (sigaction(SIGPIPE, &action, NULL) == ERROR) exit(1);
 
     fd_udp = socket(AF_INET, SOCK_DGRAM, 0);
-    if (fd_udp == -1) exit(1);
+    if (fd_udp == ERROR) exit(1);
 
     n = setsockopt(fd_udp, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv_udp_r, sizeof tv_udp_r);
-    if (n == -1) exit(1);
+    if (n == ERROR) exit(1);
 
     fd_tcp = socket(AF_INET, SOCK_STREAM, 0);
-    if (fd_tcp == -1) exit(1);
+    if (fd_tcp == ERROR) exit(1);
 
     FD_ZERO(&inputs);
     FD_SET(fd_udp, &inputs);
@@ -143,10 +122,10 @@ void makeConnection() {
     n = getaddrinfo(NULL, ASport, &hints_tcp, &res_tcp);
     if (n != 0) exit(1);
 
-    if (bind(fd_udp, res_udp->ai_addr, res_udp->ai_addrlen) == -1) exit(1);
+    if (bind(fd_udp, res_udp->ai_addr, res_udp->ai_addrlen) == ERROR) exit(1);
 
-    if (bind(fd_tcp, res_tcp->ai_addr, res_tcp->ai_addrlen) == -1) exit(1);
-    if (listen(fd_tcp, 20) == -1) exit(1); // what size?
+    if (bind(fd_tcp, res_tcp->ai_addr, res_tcp->ai_addrlen) == ERROR) exit(1);
+    if (listen(fd_tcp, 20) == ERROR) exit(1);
 
     while (1) {
         testfds = inputs;
@@ -157,7 +136,7 @@ void makeConnection() {
             case 0:
                 break;
             
-            case -1:
+            case ERROR:
                 perror("select");
                 exit(1);
             
@@ -167,16 +146,16 @@ void makeConnection() {
 
                 if (FD_ISSET(fd_udp, &testfds)) {
                     n = readMessageUdp(fd_udp, buffer, &addr);
-                    if (n == -1) break;
+                    if (n == ERROR) break;
                     parseMessage(buffer, NULL, fd_udp, addr);
                 }
                 else if (FD_ISSET(fd_tcp, &testfds)) {
                     addrlen = sizeof(addr);
                     new_fd = accept(fd_tcp, (struct sockaddr *)&addr, &addrlen);
-                    if (new_fd == ERROR) break; //mudar
+                    if (new_fd == ERROR) break;
 
                     n = setsockopt(new_fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv_tcp_r, sizeof tv_tcp_r);
-                    if (n == -1) exit(1);
+                    if (n == ERROR) break;
 
                     FD_SET(new_fd, &inputs);
 
@@ -192,7 +171,7 @@ void makeConnection() {
                     for (int i = 0; i < size; i++) {
                         if (fds[i] != NULL && fds[i]->fd != 0 && FD_ISSET(fds[i]->fd, &testfds)) {
                             n = readMessageTcp(fds[i], buffer);
-                            if (n == -1) break;
+                            if (n == ERROR) break;
                             if (n == SOCKET_ERROR) {
                                 FD_CLR(fds[i]->fd, &inputs);
                                 close(fds[i]->fd);
@@ -237,8 +216,7 @@ int readMessageUdp(int fd, char *buffer, struct sockaddr_in *addr) {
     unsigned int port;
 
     code = recvfrom(fd, buffer, 127, 0, (struct sockaddr *)addr, &addrlen);
-    if (code == ERROR) printf("Error on receive\n");
-    else if (verbose) {
+    if (verbose) {
         inet_ntop(AF_INET, &addr->sin_addr, ip, sizeof(ip));
         port = ntohs(addr->sin_port);
         printf("RECEIVED FROM %s %u: %s\n", ip, port, buffer); // ver \n
@@ -248,11 +226,11 @@ int readMessageUdp(int fd, char *buffer, struct sockaddr_in *addr) {
 
 
 void parseMessage(char *buffer, userinfo user, int fd_udp, struct sockaddr_in addr) {
-    int codeOperation, codeStatus, len, vc = -1, nread;
+    int codeOperation, codeStatus = 0, len, vc = -1, nread;
     char message[128], operation[4], uid[6], third[9], fourth[16], fifth[26];
     struct addrinfo *res;
 
-    nread = sscanf(buffer, "%s %s %s %s %s", operation, uid, third, fourth, fifth); //verify if uids are equal
+    nread = sscanf(buffer, "%s %s %s %s %s", operation, uid, third, fourth, fifth);
 
     codeOperation = verifyOperation(operation);
 
@@ -264,31 +242,33 @@ void parseMessage(char *buffer, userinfo user, int fd_udp, struct sockaddr_in ad
             break;
         
         case EXIT:
-            codeStatus = unregisterUser(uid, third);
+            if (strcmp(user->uid, uid) != 0) codeStatus = NOK;
+            else codeStatus = unregisterUser(uid, third);
             len = formatMessage(codeOperation, codeStatus, message);
             sendMessageUdp(fd_udp, message, len, addr);
             break;
         
         case RVC:
-            codeStatus = rvc(uid, third); // fazer
+            codeStatus = rvc(third);
             user = findUser(fds, uid, size);
-            if (user == NULL) codeStatus = NOK;
+            if (user == NULL || strcmp(user->uid, uid) != 0) codeStatus = NOK;
             len = formatMessage(codeOperation, codeStatus, message);
             user->waitingForPd = 0;
-            sendMessageTcp(user, message, len);
+            writeTcp(user->fd, len, message);;
             break;
 
         case LOGIN:
             codeStatus = loginUser(uid, third, user);
             len = formatMessage(codeOperation, codeStatus, message);
-            sendMessageTcp(user, message, len);
+            writeTcp(user->fd, len, message);;
             break;
 
         case REQ:
-            codeStatus = approveRequest(uid, third, fourth, fifth, &vc, &res);
+            if (strcmp(user->uid, uid) != 0) codeStatus = EUSER;
+            else codeStatus = approveRequest(uid, third, fourth, fifth, &vc, &res);
             if (codeStatus != OK) {
                 len = formatMessage(codeOperation, codeStatus, message);
-                sendMessageTcp(user, message, len);
+                writeTcp(user->fd, len, message);;
             }
             else {
                 if (nread == 5) len = sprintf(message, "VLC %s %04d %s %s\n", uid, vc, fourth, fifth);
@@ -300,9 +280,10 @@ void parseMessage(char *buffer, userinfo user, int fd_udp, struct sockaddr_in ad
             break;
 
         case VAL:
-            codeStatus = validateUser(uid, third, fourth);
+            if (strcmp(user->uid, uid) != 0) codeStatus = 0;
+            else codeStatus = validateUser(uid, third, fourth);
             len = formatMessage(codeOperation, codeStatus, message);
-            sendMessageTcp(user, message, len);
+            writeTcp(user->fd, len, message);;
             break;
 
         case VLD:
@@ -313,7 +294,7 @@ void parseMessage(char *buffer, userinfo user, int fd_udp, struct sockaddr_in ad
         default:
             len = sprintf(message, "ERR\n");
             if (user == NULL) sendMessageUdp(fd_udp, message, len, addr);
-            else sendMessageTcp(user, message, len);
+            else writeTcp(user->fd, len, message);;
             break;
     }
 }
@@ -321,8 +302,8 @@ void parseMessage(char *buffer, userinfo user, int fd_udp, struct sockaddr_in ad
 
 int registerUser(char *uid, char *pass, char *PDIP, char *PDport) {
     DIR *dUsers;
-    struct dirent *dir;
-    int code, nread, nwritten, len;
+    struct dirent *dir = NULL;
+    int code, nwritten, len;
     char path[32], buffer[128];
     FILE *fptr;
 
@@ -333,7 +314,7 @@ int registerUser(char *uid, char *pass, char *PDIP, char *PDport) {
     if (!searchDir(dUsers, dir, uid)) {
         sprintf(path, "./USERS/%s", uid);
         code = mkdir(path, 0777);
-        if (code == -1) {
+        if (code == ERROR) {
             closedir(dUsers);
             return NOK;
         }
@@ -352,8 +333,8 @@ int registerUser(char *uid, char *pass, char *PDIP, char *PDport) {
         }
     }
     else {
-        nread = fread(buffer, sizeof(char), 16, fptr);
-        buffer[nread] = '\0';
+        memset(buffer, 0, sizeof(char));
+        fread(buffer, sizeof(char), 16, fptr);
         if (strcmp(buffer, pass) != 0) {
             fclose(fptr);
             return NOK;
@@ -385,7 +366,7 @@ int searchDir(DIR *d, struct dirent *dir, char *uid) {
 
 
 int formatMessage(int codeOperation, int codeStatus, char *message) {
-    int len;
+    int len = 0;
     switch (codeOperation) {
         case REG:
             if (codeStatus == OK) len = sprintf(message, "RRG OK\n");
@@ -423,41 +404,30 @@ int formatMessage(int codeOperation, int codeStatus, char *message) {
 void sendMessageUdp(int fd, char *message, int len, struct sockaddr_in addr) {
     int code;
     socklen_t addrlen = sizeof(addr);
-    char ip[INET_ADDRSTRLEN];
-    unsigned int port;
 
     code = sendto(fd, message, len, 0, (struct sockaddr *)&addr, addrlen);
-    if (code == ERROR) puts("Error on send\n");
-    else if (verbose) {
-        inet_ntop(AF_INET, &addr.sin_addr, ip, sizeof(ip));
-        port = ntohs(addr.sin_port);
-        printf("SENT TO %s %u: %s\n", ip, port, message);
-    }
+    if (code == ERROR) printf("Error on send\n");
 }
 
 
 void sendMessageUdpClient(int fd, char *message, int len, struct addrinfo *res) {
     int code;
-    char ip[INET_ADDRSTRLEN];
-    unsigned int port;
 
     code = sendto(fd, message, len, 0, res->ai_addr, res->ai_addrlen);
-    if (code == ERROR) puts("Error on send\n");
-    printf("%s", message);
+    if (code == ERROR) printf("Error on send\n");
 }
 
 
 int unregisterUser(char *uid, char *pass) {
     char path[32], buffer[16];
     FILE *fptr;
-    int nread;
 
     sprintf(path, "./USERS/%s/pass.txt", uid);
     fptr = fopen(path, "r");
     if (fptr == NULL) return NOK;
 
-    nread = fread(buffer, sizeof(char), 16, fptr);
-    buffer[nread] = '\0'; // need?
+    memset(buffer, 0, sizeof(char));
+    fread(buffer, sizeof(char), 16, fptr);
     if (strcmp(buffer, pass) != 0) {
         fclose(fptr);
         return NOK;
@@ -465,7 +435,7 @@ int unregisterUser(char *uid, char *pass) {
     fclose(fptr);
 
     sprintf(path, "./USERS/%s/reg.txt", uid);
-    if (remove(path) != 0) return NOK;
+    remove(path);
 
     return OK;
 }
@@ -492,30 +462,12 @@ int readMessageTcp(userinfo user, char *buffer) {
 }
 
 
-void sendMessageTcp(userinfo user, char *message, int len) {
-    int nwritten;
-    char *ptr = message;
-    char ip[INET_ADDRSTRLEN];
-    unsigned int port;
-
-    nwritten = writeTcp(user->fd, len, ptr);
-
-    if (verbose) {
-        inet_ntop(AF_INET, &user->addr.sin_addr, ip, sizeof(ip));
-        port = ntohs(user->addr.sin_port);
-        printf("SENT TO %s %u: %s\n", ip, port, message);
-    }
-}
-
-
 int loginUser(char *uid, char *pass, userinfo user) {
     char path[32], buffer[16];
     FILE *fptr;
-    int nread, nwritten, len;
+    int nwritten, len;
     DIR *dUsers;
-    struct dirent *dir;
-    char ip[INET_ADDRSTRLEN];
-    unsigned int port;
+    struct dirent *dir = NULL;
 
     dUsers = opendir("USERS");
     if (dUsers == NULL) return ERR;
@@ -529,8 +481,8 @@ int loginUser(char *uid, char *pass, userinfo user) {
     fptr = fopen(path, "r");
     if (fptr == NULL) return NOK;
 
-    nread = fread(buffer, sizeof(char), 16, fptr); // ver nread
-    buffer[nread] = '\0';
+    memset(buffer, 0, sizeof(buffer));
+    fread(buffer, sizeof(char), 16, fptr);
     if (strcmp(buffer, pass) != 0) {
         fclose(fptr);
         return NOK;
@@ -540,9 +492,6 @@ int loginUser(char *uid, char *pass, userinfo user) {
     sprintf(path, "USERS/%s/login.txt", uid);
     fptr = fopen(path, "w");
     if (fptr == NULL) return ERR;
-    
-    //inet_ntop(AF_INET, &userinfo->addr.sin_addr, ip, sizeof(ip));
-    //port = ntohs(userinfo->addr.sin_port);
 
     len = sprintf(buffer, "%d", user->fd);
     nwritten = fwrite(buffer, sizeof(char), len, fptr);
@@ -560,17 +509,15 @@ int loginUser(char *uid, char *pass, userinfo user) {
 
 void logoutUser(char *uid) {
     char path[32];
-    FILE *fptr;
-    int nread;
 
     sprintf(path, "./USERS/%s/login.txt", uid);
-    if (remove(path) != 0) puts("ERROR on logout");
+    remove(path);
 }
 
 
 int approveRequest(char *uid, char *rid, char *fop, char *fname, int *vc, struct addrinfo **res) {
     DIR *dUsers;
-    struct dirent *dir;
+    struct dirent *dir = NULL;
     FILE *fptr;
     char path[32], buffer[128], PDIP[32], PDport[8];
     int len, nwritten;
@@ -600,7 +547,7 @@ int approveRequest(char *uid, char *rid, char *fop, char *fname, int *vc, struct
 
     sprintf(path, "./USERS/%s/reg.txt", uid);
     fptr = fopen(path, "r");
-    if (fptr == NULL) return NOK;
+    if (fptr == NULL) return EPD;
 
     memset(buffer, 0, sizeof(buffer));
     fread(buffer, sizeof(char), 127, fptr);
@@ -611,7 +558,7 @@ int approveRequest(char *uid, char *rid, char *fop, char *fname, int *vc, struct
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_DGRAM;
     n = getaddrinfo(PDIP, PDport, &hints, res);
-    if (n == -1) return NOK;
+    if (n == ERROR) return EPD;
 
     sprintf(path, "./USERS/%s/req.txt", uid);
     fptr = fopen(path, "w");
@@ -631,7 +578,7 @@ int approveRequest(char *uid, char *rid, char *fop, char *fname, int *vc, struct
 }
 
 
-int rvc(char *uid, char *status) {
+int rvc(char *status) {
     if (strcmp(status, "OK") == 0) return OK;
     return NOK;
 }
@@ -640,7 +587,7 @@ int rvc(char *uid, char *status) {
 int validateUser(char *uid, char *rid, char *vc) {
     FILE *fptr;
     char path[32], buffer[128], temp[128], fop[4], fname[32], localRid[8], localVc[8];
-    int nread, tid, len;
+    int tid, len;
 
     if (verifyUid(uid) != 0) return 0;
 

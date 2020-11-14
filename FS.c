@@ -12,26 +12,13 @@
 #include "verify.h"
 #include "userinfo.h"
 #include "message.h"
+#include "FS.h"
 
 
 char *FSport = NULL;
 char *ASIP = NULL;
 char *ASport = NULL;
 int verbose = 0;
-
-
-void parseArgs(int argc, char **argv);
-void makeConnection();
-int parseMessageUser(char *buffer, char *message, userinfo user);
-userinfo parseMessageAS(char *buffer, char *message, userinfo *fds, int size);
-void list(userinfo user, char *uid);
-int searchDir(DIR *d, struct dirent *dir, char *uid);
-off_t fileSize(char *filename);
-void removeUser(userinfo user, char *uid);
-void delete(userinfo user, char *uid, char *fname);
-void retrieve(userinfo user, char *uid, char *fname);
-int upload(char *buffer, char *message, userinfo user);
-void removeFile(userinfo user, char *uid);
 
 
 int main(int argc, char **argv) {
@@ -74,7 +61,6 @@ void parseArgs(int argc, char **argv) {
                 i += 2;
                 break;
             default:
-                printf("Bad argument\n");
                 exit(1);
                 break;
         }
@@ -94,7 +80,7 @@ void makeConnection() {
     struct sockaddr_in addr;
     fd_set inputs, testfds;
     struct sigaction action;
-    int size = 1; // mudar
+    int size = 20;
     userinfo *fds = calloc(size, sizeof(struct userinfo));
     int nextFreeEntry = 0;
     DIR *d;
@@ -103,6 +89,8 @@ void makeConnection() {
     userinfo user;
     struct timeval tv_tcp_r, tv_udp_r;
     char dummy[1024];
+    char ip[INET_ADDRSTRLEN];
+    unsigned int port;
 
     tv_tcp_r.tv_sec = 1;
     tv_tcp_r.tv_usec = 0;
@@ -112,22 +100,22 @@ void makeConnection() {
 
     if ((d = opendir("USERSF")) == NULL) {
         n = mkdir("USERSF", 0777);
-        if (n == -1) exit(1);
+        if (n == ERROR) exit(1);
     }
     else closedir(d);
 
     memset(&action, 0, sizeof action);
     action.sa_handler = SIG_IGN;
-    if (sigaction(SIGPIPE, &action, NULL) == -1) exit(1);
+    if (sigaction(SIGPIPE, &action, NULL) == ERROR) exit(1);
 
     fd_udp = socket(AF_INET, SOCK_DGRAM, 0);
-    if (fd_udp == -1) exit(1);
+    if (fd_udp == ERROR) exit(1);
 
     n = setsockopt(fd_udp, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv_udp_r, sizeof tv_udp_r);
-    if (n == -1) exit(1);
+    if (n == ERROR) exit(1);
 
     fd_tcp = socket(AF_INET, SOCK_STREAM, 0);
-    if (fd_tcp == -1) exit(1);
+    if (fd_tcp == ERROR) exit(1);
 
     FD_ZERO(&inputs);
     FD_SET(fd_udp, &inputs);
@@ -148,8 +136,8 @@ void makeConnection() {
     n = getaddrinfo(NULL, FSport, &hints_tcp, &res_tcp);
     if (n != 0) exit(1);
 
-    if (bind(fd_tcp, res_tcp->ai_addr, res_tcp->ai_addrlen) == -1) exit(1);
-    if (listen(fd_tcp, 20) == -1) exit(1); // what size?
+    if (bind(fd_tcp, res_tcp->ai_addr, res_tcp->ai_addrlen) == ERROR) exit(1);
+    if (listen(fd_tcp, 20) == ERROR) exit(1);
 
     while(1) {
         testfds = inputs;
@@ -159,7 +147,7 @@ void makeConnection() {
         switch (out_fds) {
             case 0:
                 break;
-            case -1:
+            case ERROR:
                 perror("select");
                 exit(1);
                 break;
@@ -171,7 +159,14 @@ void makeConnection() {
                 if (FD_ISSET(fd_udp, &testfds)) {
                     addrlen = sizeof(addr);
                     n = recvfrom(fd_udp, buffer, 128, 0, (struct sockaddr *)&addr, &addrlen);
-                    if (n == ERROR) puts("ERROR");
+                    if (n == ERROR) break;
+
+                    if (verbose) {
+                        inet_ntop(AF_INET, &addr.sin_addr, ip, sizeof(ip));
+                        port = ntohs(addr.sin_port);
+                        printf("RECEIVED FROM %s %u: %s\n", ip, port, buffer); // ver \n
+                    }
+                    
                     user = parseMessageAS(buffer, message, fds, size);
                     if (user != NULL) {
                         FD_CLR(user->fd, &inputs);
@@ -186,10 +181,10 @@ void makeConnection() {
                 else if (FD_ISSET(fd_tcp, &testfds)) {
                     addrlen = sizeof(addr);
                     new_fd = accept(fd_tcp, (struct sockaddr *)&addr, &addrlen);
-                    if (new_fd == ERROR) exit(1); //mudar
+                    if (new_fd == ERROR) break;
 
                     n = setsockopt(new_fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv_tcp_r, sizeof tv_tcp_r);
-                    if (n == -1) exit(1);
+                    if (n == ERROR) break;
                     
                     FD_SET(new_fd, &inputs);
                     fds[nextFreeEntry] = createUserinfo(new_fd, addr);
@@ -205,6 +200,11 @@ void makeConnection() {
                     for (int i = 0; i < size; i++) {
                         if (fds[i] != NULL && fds[i]->fd != 0 && FD_ISSET(fds[i]->fd, &testfds)) {
                             n = readTcp(fds[i]->fd, 3, buffer);
+                            if (verbose) {
+                                inet_ntop(AF_INET, &user->addr.sin_addr, ip, sizeof(ip));
+                                port = ntohs(user->addr.sin_port);
+                                printf("RECEIVED FROM %s %u: %s\n", ip, port, buffer);
+                            }
 
                             code = verifyOperation(buffer);
                             if (code == UPLOAD) {
@@ -223,11 +223,11 @@ void makeConnection() {
                             }
 
                             if (len > 9) {
-                                code = sendto(fd_udp, message, strlen(message), 0, res_udp->ai_addr, res_udp->ai_addrlen); //mudar
-                                if (code == ERROR) puts("ERROR");
+                                code = sendto(fd_udp, message, strlen(message), 0, res_udp->ai_addr, res_udp->ai_addrlen);
+                                if (code == ERROR) break;
                             }
                             else {
-                                writeTcp(fds[i]->fd, len, message); // verificar
+                                writeTcp(fds[i]->fd, len, message);
                                 FD_CLR(fds[i]->fd, &inputs);
                                 close(fds[i]->fd);
                                 free(fds[i]->lastUploadedFile);
@@ -254,7 +254,7 @@ int parseMessageUser(char *buffer, char *message, userinfo user) {
     int code, len;
     char  operation[4], uid[8], tid[8], fname[32], path[32];
     DIR *dUsers;
-    struct dirent *dir;
+    struct dirent *dir = NULL;
 
     sscanf(buffer, "%s %s %s %s", operation, uid, tid, fname);
     code = verifyOperation(operation);
@@ -267,7 +267,7 @@ int parseMessageUser(char *buffer, char *message, userinfo user) {
     sprintf(path, "USERSF/%s", uid);
     if (!searchDir(dUsers, dir, uid)) {
         code = mkdir(path, 0777);
-        if (code == -1) {
+        if (code == ERROR) {
             closedir(dUsers);
             len = sprintf(message, "%s NOK\n", operation);
             return len;
@@ -317,7 +317,7 @@ userinfo parseMessageAS(char *buffer, char *message, userinfo *fds, int size) {
     int code, len;
     userinfo user;
     char operation[4], uid[6], third[9], fourth[16], fifth[26];
-    printf("RECEIVED: %s", buffer);
+
     sscanf(buffer, "%s %s %s %s %s", operation, uid, third, fourth, fifth);
 
     code = verifyOperation(operation);
@@ -357,7 +357,7 @@ userinfo parseMessageAS(char *buffer, char *message, userinfo *fds, int size) {
 
 void list(userinfo user, char *uid) {
     DIR *dUsers;
-    struct dirent *dir;
+    struct dirent *dir = NULL;
     char path[32], files[1024], message[1024], temp[64];
     int nfiles = 0, len;
     off_t fsize;
@@ -380,7 +380,6 @@ void list(userinfo user, char *uid) {
 
     sprintf(path, "USERSF/%s", uid);
     dUsers = opendir(path);
-    if (dUsers == NULL) return; // eu sei que existe aqui
     while ((dir = readdir(dUsers)) != NULL) {
         if (verifyFname(dir->d_name) == 0) {
             nfiles++;
@@ -417,7 +416,7 @@ off_t fileSize(char *filename) {
 
 void removeUser(userinfo user, char *uid) {
     DIR *dUsers;
-    struct dirent *dir;
+    struct dirent *dir = NULL;
     char path[32], message[16];
     int len;
 
@@ -452,7 +451,7 @@ void removeUser(userinfo user, char *uid) {
 
 void delete(userinfo user, char *uid, char *fname) {
     DIR *dUsers;
-    struct dirent *dir;
+    struct dirent *dir = NULL;
     char path[32], message[16];
     int len = 0, deleted = 0;
 
@@ -498,12 +497,12 @@ void delete(userinfo user, char *uid, char *fname) {
 
 void retrieve(userinfo user, char *uid, char *fname) {
     DIR *dUsers;
-    struct dirent *dir;
+    struct dirent *dir = NULL;
     char path[32], message[64], buffer[1024];
     int len, found = 0, empty = 1, nread = 0, nwritten = 0;
     off_t fsize;
     FILE *fptr;
-    puts("retrive");
+
     dUsers = opendir("USERSF");
     if (dUsers == NULL) {
         len = sprintf(message, "RRT NOK\n");
@@ -554,9 +553,9 @@ void retrieve(userinfo user, char *uid, char *fname) {
     writeTcp(user->fd, len, message);
 
     while (fsize > 0) {
-        nread = fread(buffer, sizeof(char), 1023, fptr); //verificar
+        nread = fread(buffer, sizeof(char), 1023, fptr);
 
-        nwritten = writeTcp(user->fd, nread, buffer); // verificar
+        nwritten = writeTcp(user->fd, nread, buffer);
 
         fsize -= nwritten;
     }
@@ -572,7 +571,7 @@ int upload(char *buffer, char *message, userinfo user) {
     int nread = 0, len = 0, code, nfiles = 0, found = 0;
     FILE *fptr;
     DIR *dUsers;
-    struct dirent *dir;
+    struct dirent *dir = NULL;
 
     sscanf(buffer, "%s %s %s", operation, uid, tid);
 
@@ -608,7 +607,7 @@ int upload(char *buffer, char *message, userinfo user) {
     sprintf(path, "USERSF/%s", uid);
     if (!searchDir(dUsers, dir, uid)) {
         code = mkdir(path, 0777);
-        if (code == -1) {
+        if (code == ERROR) {
             closedir(dUsers);
             len = sprintf(message, "RUP NOK\n");
             return len;

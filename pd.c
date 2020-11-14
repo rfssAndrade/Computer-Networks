@@ -87,7 +87,6 @@ void parseArgs(int argc, char **argv) {
 void makeConnection() {
     int fd_client, fd_server, code = 0, out_fds;
     ssize_t n;
-    socklen_t addrlen;
     struct addrinfo hints_as, hints_pd, *res_as, *res_pd;
     struct sockaddr_in addr_client, addr_server;
     char buffer[128], command[8], second[8], third[16], answer[128], message[128];
@@ -96,13 +95,22 @@ void makeConnection() {
 
     memset(&action, 0, sizeof action);
     action.sa_handler = SIG_IGN;
-    if (sigaction(SIGPIPE, &action, NULL) == -1) exit(1);
+    if (sigaction(SIGPIPE, &action, NULL) == ERROR) {
+        printf("Failed to handle signal\n");
+        exit(1);
+    }
 
     fd_client = socket(AF_INET, SOCK_DGRAM, 0);
-    if (fd_client == -1) exit(1);
+    if (fd_client == ERROR) {
+        printf("Failed to open socket\n");
+        exit(1);
+    }
 
     fd_server = socket(AF_INET, SOCK_DGRAM, 0);
-    if (fd_server == -1) exit(1);
+    if (fd_server == ERROR) {
+        printf("Failed to open socket\n");
+        exit(1);
+    }
 
     FD_ZERO(&inputs);
     FD_SET(0, &inputs);
@@ -113,18 +121,24 @@ void makeConnection() {
     hints_as.ai_family = AF_INET;
     hints_as.ai_socktype = SOCK_DGRAM;
 
-    code = getaddrinfo(ASIP, ASport, &hints_as, &res_as);
-    if (code != 0) exit(1); // correto?
+    n = getaddrinfo(ASIP, ASport, &hints_as, &res_as);
+    if (n != 0) {
+        printf("Failed to get AS address\n");
+        exit(1);
+    }
 
     memset(&hints_pd, 0, sizeof hints_pd);
     hints_pd.ai_family = AF_INET;
     hints_pd.ai_socktype = SOCK_DGRAM;
     hints_pd.ai_flags = AI_PASSIVE;
 
-    code = getaddrinfo(PDIP, PDport, &hints_pd, &res_pd);
-    if (code != 0) exit(1);
+    n = getaddrinfo(PDIP, PDport, &hints_pd, &res_pd);
+    if (n != 0) {
+        printf("Faild to get address\n");
+        exit(1);
+    }
 
-    while (bind(fd_server,res_pd->ai_addr,res_pd->ai_addrlen) ==  -1) puts("Can't bind");
+    while (bind(fd_server,res_pd->ai_addr,res_pd->ai_addrlen) ==  ERROR) printf("Can't bind");
         
     while (1) {
         testfds = inputs;
@@ -133,7 +147,7 @@ void makeConnection() {
         switch (out_fds) {
             case 0:
                 break;
-            case -1:
+            case ERROR:
                 perror("select");
                 exit(1);
             default:
@@ -177,7 +191,7 @@ void makeConnection() {
 int parseInput(char *buffer, char *command, char *second, char *third) {
     int code;
 
-    sscanf(buffer, "%s %s %s", command, second, third); // verificar?
+    sscanf(buffer, "%s %s %s", command, second, third);
 
     code = verifyCommand(command);
     switch (code) {
@@ -210,7 +224,7 @@ int parseInput(char *buffer, char *command, char *second, char *third) {
 void formatMessage(char *message, int code, char *second, char *third) {
     switch (code) {
         case REG:
-            sprintf(message, "REG %s %s %s %s\n", second, third, PDIP, PDport); // returns message size
+            sprintf(message, "REG %s %s %s %s\n", second, third, PDIP, PDport);
             break;
         case EXIT:
             sprintf(message, "UNR %s %s\n", uid, pass);
@@ -223,7 +237,7 @@ void sendMessageClient(int fd, char *message, struct addrinfo *res) {
     int code;
 
     code = sendto(fd, message, strlen(message), 0, res->ai_addr, res->ai_addrlen);
-    if (code == ERROR) puts("ERROR");//?????
+    if (code == ERROR) printf("ERROR");
 }
 
 
@@ -232,7 +246,7 @@ void readMessage(int fd, char *answer, struct sockaddr_in *addr) {
     socklen_t addrlen = sizeof(addr);
 
     code = recvfrom(fd, answer, 128, 0, (struct sockaddr *)addr, &addrlen);
-    if (code == ERROR) puts("ERROR");
+    if (code == ERROR) printf("ERROR");
 }
 
 
@@ -241,7 +255,7 @@ void sendMessageServer(int fd, char *message, struct sockaddr_in addr) {
     socklen_t addrlen = sizeof(addr);
 
     code = sendto(fd, message, strlen(message), 0, (struct sockaddr *)&addr, addrlen); //mudar
-    if (code == ERROR) puts("ERROR");
+    if (code == ERROR) printf("ERROR");
 }
 
 

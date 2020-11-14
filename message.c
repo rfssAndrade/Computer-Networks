@@ -14,7 +14,7 @@ int readTcp(int fd, int nBytes, char *ptr) {
         nread = read(fd, ptr, nBytes - tread);
         if (nread < 0) {
             if (tread == 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-                puts("Read timeout");
+                printf("Read timeout");
                 return ERROR;
             }
             else return tread;
@@ -40,7 +40,7 @@ int writeTcp(int fd, int nBytes, char *ptr) {
 
         if (nwritten < 0) {
             if (twritten == 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-                puts("Write timeout");
+                printf("Write timeout");
                 return ERROR;
             }
             else if (twritten == 0 && errno == EPIPE) {

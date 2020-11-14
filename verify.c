@@ -29,7 +29,6 @@ int verifyCommand(char *command) {
     if (strcmp(command, "remove") == 0 || strcmp(command, "x") == 0) return REMOVE;
     if (strcmp(command, "exit") == 0) return EXIT;
     
-    //printf("Invalid command\n");
     return ERROR;
 }
 

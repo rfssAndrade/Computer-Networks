@@ -1,5 +1,3 @@
-// colocar socket timeout
-
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/socket.h>
@@ -102,38 +100,37 @@ void parseArgs(int argc, char **argv) {
 void makeConnection() {
     int fd_as, fd_fs = -1, code, out_fds;
     ssize_t n;
-    socklen_t addrlen;
     struct addrinfo hints, *res_as, *res_fs;
-    struct sockaddr_in addr;
     char buffer[128];
     char command[16], second[32], third[32], answer[128], message[128];
     fd_set inputs, testfds;
-    struct timeval tv_as_r, tv_as_w, tv_fs_r, tv_fs_w;
+    struct timeval tv_as_r, tv_fs_r;
     struct sigaction action;
 
     memset(&action, 0, sizeof action);
     action.sa_handler = SIG_IGN;
-    if (sigaction(SIGPIPE, &action, NULL) == -1) exit(1);
+    if (sigaction(SIGPIPE, &action, NULL) == ERROR) {
+        printf("Failed to handle signal\n");
+        exit(1);
+    }
 
     tv_as_r.tv_sec = 0;
     tv_as_r.tv_usec = 100;
 
-    // tv_as_w.tv_sec = 0;
-    // tv_as_w.tv_usec = 100;
-
     tv_fs_r.tv_sec = 1;
     tv_fs_r.tv_usec = 0;
 
-    // tv_fs_w.tv_sec = 0;
-    // tv_fs_w.tv_usec = 100;
-
     fd_as = socket(AF_INET, SOCK_STREAM, 0);
-    if (fd_as == -1) exit(1);
+    if (fd_as == ERROR) {
+        printf("Failed to open socket\n");
+        exit(1);
+    }
 
     n = setsockopt(fd_as, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv_as_r, sizeof tv_as_r);
-    if (n == -1) exit(1);
-    //n = setsockopt(fd_as, SOL_SOCKET, SO_SNDTIMEO, (const char*)&tv_as_w, sizeof tv_as_w);
-    //if (n == -1) exit(1);
+    if (n == ERROR) {
+        printf("Failed to set socket timeout\n");
+        exit(1);
+    }
 
     FD_ZERO(&inputs);
     FD_SET(0, &inputs);
@@ -144,13 +141,22 @@ void makeConnection() {
     hints.ai_socktype = SOCK_STREAM;
     
     n = getaddrinfo(ASIP, ASport, &hints, &res_as);
-    if (n != 0) exit(1);
+    if (n != 0) {
+        printf("Failed to get AS address\n");
+        exit(1);
+    }
 
     n = getaddrinfo(FSIP, FSport, &hints, &res_fs);
-    if (n != 0) exit(1);
+    if (n != 0) {
+        printf("Failed to get FS address\n");
+        exit(1);
+    }
 
     n = connect(fd_as, res_as->ai_addr, res_as->ai_addrlen);
-    if (n == -1) exit(1);
+    if (n == ERROR) {
+        printf("Failed to connect to server\n");
+        exit(1);
+    }
 
     while (1) {
         testfds = inputs;
@@ -160,7 +166,7 @@ void makeConnection() {
         switch (out_fds) {
             case 0:
                 break;
-            case -1:
+            case ERROR:
                 perror("select");
                 exit(1);
         default:
@@ -181,15 +187,24 @@ void makeConnection() {
                 if (code > 4) {
 
                     fd_fs = socket(AF_INET, SOCK_STREAM, 0);
-                    if (fd_fs == -1) exit(1);
+                    if (fd_fs == ERROR) {
+                        printf("Failed to open socket\n");
+                        break;
+                    }
 
-                    //n = setsockopt(fd_fs, SOL_SOCKET, SO_SNDTIMEO, (const char*)&tv_fs_r, sizeof tv_fs_r);
-                    //if (n == -1) exit(1); // change
                     n = setsockopt(fd_fs, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv_fs_r, sizeof tv_fs_r);
-                    if (n == -1) exit(1); // change
+                    if (n == ERROR) {
+                        printf("Failed to set socket timeout\n");
+                        close(fd_fs);
+                        break;
+                    }
 
                     n = connect(fd_fs, res_fs->ai_addr, res_fs->ai_addrlen);
-                    if (n == -1) exit(1);
+                    if (n == ERROR) {
+                        printf("Failed to connect to server\n");
+                        close(fd_fs);
+                        break;
+                    }
 
                     FD_SET(fd_fs, &inputs);
                 }
@@ -220,6 +235,7 @@ void makeConnection() {
     freeaddrinfo(res_fs);
     close(fd_as);
 }
+
 
 int parseInput(char *buffer, char *command, char *second, char *third) {
     int code;
@@ -318,7 +334,7 @@ void sendMessage(int code, int fd_as, int fd_fs, char *message) {
     while (nleft > 0) {
         nwritten = write(fd, ptr, nleft);
         if (nwritten <= 0) {
-            puts("ERROR ON SEND");
+            printf("ERROR ON SEND");
             break;
         }
         nleft -= nwritten;
@@ -341,7 +357,7 @@ int readMessageFS(int fd) {
     if (code == RLS || code == RRT) parseAnswerFS(operation, code, fd);
     else {
         nread  = readTcp(fd, 5, ptr);
-        if (nread == -1) return nread;
+        if (nread == ERROR) return nread;
         ptr += nread;
         *ptr = '\0';
         code = verifyAnswerFS(operation);
@@ -444,7 +460,7 @@ int verifyAnswerFS(char *answer) {
 int parseAnswerFS(char *operation, int code, int fd) {
     char status[4], buffer[128];
     char *ptr = status;
-    int nread = 0, nFiles, spacesRead = 0, i = 1, fSize;
+    int nread = 0, nFiles, spacesRead = 0, i = 1, fSize = 0;
     FILE *fptr;
 
     nread = readTcp(fd, 3, ptr); // read status
@@ -528,8 +544,8 @@ int parseAnswerFS(char *operation, int code, int fd) {
                         ptr = buffer;
                     }
                     printf("File in ./%s\n", fname);
+                    fclose(fptr);
                 }
-                fclose(fptr);
             }
             else {
                 nread  = readTcp(fd, 2, ptr);
