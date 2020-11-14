@@ -200,11 +200,6 @@ void makeConnection() {
                     for (int i = 0; i < size; i++) {
                         if (fds[i] != NULL && fds[i]->fd != 0 && FD_ISSET(fds[i]->fd, &testfds)) {
                             n = readTcp(fds[i]->fd, 3, buffer);
-                            if (verbose) {
-                                inet_ntop(AF_INET, &fds[i]->addr.sin_addr, ip, sizeof(ip));
-                                port = ntohs(fds[i]->addr.sin_port);
-                                printf("RECEIVED FROM %s %u: %s\n", ip, port, buffer);
-                            }
 
                             code = verifyOperation(buffer);
                             if (code == UPLOAD) {
@@ -222,6 +217,12 @@ void makeConnection() {
                                 len = parseMessageUser(buffer, message, fds[i]);
                             }
 
+                            if (verbose) {
+                                inet_ntop(AF_INET, &fds[i]->addr.sin_addr, ip, sizeof(ip));
+                                port = ntohs(fds[i]->addr.sin_port);
+                                printf("RECEIVED FROM %s %u: %s\n", ip, port, buffer);
+                            }
+                            
                             if (len > 9) {
                                 code = sendto(fd_udp, message, strlen(message), 0, res_udp->ai_addr, res_udp->ai_addrlen);
                                 if (code == ERROR) break;
