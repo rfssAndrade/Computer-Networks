@@ -383,13 +383,15 @@ void list(userinfo user, char *uid) {
     sprintf(path, "USERSF/%s", uid);
     dUsers = opendir(path);
     while ((dir = readdir(dUsers)) != NULL) {
-        if (verifyFname(dir->d_name) == 0) {
+        if (dir->d_type == DT_REG) {
             nfiles++;
-            fsize = fileSize(dir->d_name);
-            sprintf(temp, " %s %ld", dir->d_name, fsize);
+            // sprintf(path, "USERSF/%s/%s", uid, dir->d_name);
+            // fsize = fileSize(dir->d_name);
+            sprintf(temp, " %s %hu", dir->d_name, dir->d_reclen);
             strcat(files, temp);
         }
     }
+    sprintf(path, "USERSF/%s", uid);
     closedir(dUsers);
     if (nfiles == 0) len = sprintf(message, "RLS EOF\n");
     else len = sprintf(message, "RLS %d%s\n", nfiles, files);
