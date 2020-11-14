@@ -210,7 +210,7 @@ void makeConnection() {
                             if (code == UPLOAD) {
                                 n = readTcp(fds[i]->fd, 12, buffer + 3);
                                 len = upload(buffer, message, fds[i]);
-                                if (len < 9) {
+                                if (len <= 9) {
                                     nread = 1;
                                     while (nread > 0) {
                                         nread = readTcp(fds[i]->fd, 1023, dummy);
@@ -625,7 +625,8 @@ int upload(char *buffer, char *message, userinfo user) {
 
     dUsers = opendir(path);
     while((dir = readdir(dUsers)) != NULL) {
-        nfiles++;
+
+        if (strlen(dir->d_name) > 3) nfiles++;
         if (strcmp(fname, dir->d_name) == 0) {
             found = 1;
             break;
