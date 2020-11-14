@@ -383,7 +383,7 @@ void list(userinfo user, char *uid) {
     sprintf(path, "USERSF/%s", uid);
     dUsers = opendir(path);
     while ((dir = readdir(dUsers)) != NULL) {
-        if (dir->d_type == DT_REG) {
+        if (strlen(dir->d_name) > 3) { // evitar . e ..
             nfiles++;
             // sprintf(path, "USERSF/%s/%s", uid, dir->d_name);
             // fsize = fileSize(dir->d_name);
