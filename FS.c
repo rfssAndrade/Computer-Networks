@@ -252,7 +252,7 @@ void makeConnection() {
 
 int parseMessageUser(char *buffer, char *message, userinfo user) {
     int code, len;
-    char  operation[4], uid[8], tid[8], fname[32], path[32];
+    char  operation[4], uid[8], tid[8], fname[32], path[64];
     DIR *dUsers;
     struct dirent *dir = NULL;
 
@@ -358,7 +358,7 @@ userinfo parseMessageAS(char *buffer, char *message, userinfo *fds, int size) {
 void list(userinfo user, char *uid) {
     DIR *dUsers;
     struct dirent *dir = NULL;
-    char path[32], files[1024], message[1024], temp[64];
+    char path[64], files[1024], message[1024], temp[64];
     int nfiles = 0, len;
     off_t fsize;
 
@@ -417,7 +417,7 @@ off_t fileSize(char *filename) {
 void removeUser(userinfo user, char *uid) {
     DIR *dUsers;
     struct dirent *dir = NULL;
-    char path[32], message[16];
+    char path[64], message[16];
     int len;
 
     dUsers = opendir("USERSF");
@@ -452,7 +452,7 @@ void removeUser(userinfo user, char *uid) {
 void delete(userinfo user, char *uid, char *fname) {
     DIR *dUsers;
     struct dirent *dir = NULL;
-    char path[32], message[16];
+    char path[64], message[16];
     int len = 0, deleted = 0;
 
     dUsers = opendir("USERSF");
@@ -498,7 +498,7 @@ void delete(userinfo user, char *uid, char *fname) {
 void retrieve(userinfo user, char *uid, char *fname) {
     DIR *dUsers;
     struct dirent *dir = NULL;
-    char path[32], message[64], buffer[1024];
+    char path[64], message[64], buffer[1024];
     int len, found = 0, empty = 1, nread = 0, nwritten = 0;
     off_t fsize;
     FILE *fptr;
@@ -566,7 +566,7 @@ void retrieve(userinfo user, char *uid, char *fname) {
 
 int upload(char *buffer, char *message, userinfo user) {
     char  operation[4], uid[8], tid[8], fname[32], size[16];
-    char *ptr = fname, path[32];
+    char *ptr = fname, path[64];
     off_t fsize;
     int nread = 0, len = 0, code, nfiles = 0, found = 0;
     FILE *fptr;
@@ -669,7 +669,7 @@ int upload(char *buffer, char *message, userinfo user) {
 
 
 void removeFile(userinfo user, char *uid) {
-    char path[32];
+    char path[64];
 
     sprintf(path, "USERSF/%s/%s", uid, user->lastUploadedFile);
     remove(path);

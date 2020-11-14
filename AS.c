@@ -304,7 +304,7 @@ int registerUser(char *uid, char *pass, char *PDIP, char *PDport) {
     DIR *dUsers;
     struct dirent *dir = NULL;
     int code, nwritten, len;
-    char path[32], buffer[128];
+    char path[64], buffer[128];
     FILE *fptr;
 
     if (verifyUid(uid) != 0 || verifyPass(pass) != 0 || verifyIp(PDIP) != 0 || verifyPort(PDport) != 0) return NOK;
@@ -419,7 +419,7 @@ void sendMessageUdpClient(int fd, char *message, int len, struct addrinfo *res) 
 
 
 int unregisterUser(char *uid, char *pass) {
-    char path[32], buffer[16];
+    char path[64], buffer[16];
     FILE *fptr;
 
     sprintf(path, "./USERS/%s/pass.txt", uid);
@@ -463,7 +463,7 @@ int readMessageTcp(userinfo user, char *buffer) {
 
 
 int loginUser(char *uid, char *pass, userinfo user) {
-    char path[32], buffer[16];
+    char path[64], buffer[16];
     FILE *fptr;
     int nwritten, len;
     DIR *dUsers;
@@ -508,7 +508,7 @@ int loginUser(char *uid, char *pass, userinfo user) {
 
 
 void logoutUser(char *uid) {
-    char path[32];
+    char path[64];
 
     sprintf(path, "./USERS/%s/login.txt", uid);
     remove(path);
@@ -519,7 +519,7 @@ int approveRequest(char *uid, char *rid, char *fop, char *fname, int *vc, struct
     DIR *dUsers;
     struct dirent *dir = NULL;
     FILE *fptr;
-    char path[32], buffer[128], PDIP[32], PDport[8];
+    char path[64], buffer[128], PDIP[32], PDport[8];
     int len, nwritten;
     struct addrinfo hints;
     ssize_t n;
@@ -586,7 +586,7 @@ int rvc(char *status) {
 
 int validateUser(char *uid, char *rid, char *vc) {
     FILE *fptr;
-    char path[32], buffer[128], temp[128], fop[4], fname[32], localRid[8], localVc[8];
+    char path[64], buffer[128], temp[128], fop[4], fname[32], localRid[8], localVc[8];
     int tid, len;
 
     if (verifyUid(uid) != 0) return 0;
@@ -621,7 +621,7 @@ int validateUser(char *uid, char *rid, char *vc) {
 
 int validateOperation(char *uid, char *tid, char *message) {
     FILE *fptr;
-    char path[32], buffer[128], localTid[8], fop[4], fname[32];
+    char path[64], buffer[128], localTid[8], fop[4], fname[32];
     int len, nread;
     userinfo user;
 
@@ -663,7 +663,7 @@ int validateOperation(char *uid, char *tid, char *message) {
 void removeUser(char *uid) {
     DIR *dUser;
     struct dirent *dir;
-    char path[32];
+    char path[64];
 
     sprintf(path, "USERS/%s", uid);
     dUser = opendir(path);

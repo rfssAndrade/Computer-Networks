@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -g -Wall -Wextra
+CFLAGS = -g
 DEPS = verify.h
 SOURCES = pd.c user.c verify.c AS.c userinfo.c message.c FS.c
 OBJS = $(SOURCES:%.c=%.o)
