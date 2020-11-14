@@ -18,11 +18,11 @@ message.o: message.c message.h verify.h
 userinfo.o: userinfo.c userinfo.h
 
 ### pd ###
-pd.o: pd.c verify.h
+pd.o: pd.c verify.h pd.h
 pd: verify.o pd.o
 
 ### user ###
-user.o: user.c verify.h message.h
+user.o: user.c verify.h message.h user.h
 user: verify.o message.o user.o
 
 

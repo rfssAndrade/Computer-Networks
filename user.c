@@ -9,6 +9,7 @@
 #include <signal.h>
 #include "verify.h"
 #include "message.h"
+#include "user.h"
 
 
 char *ASIP = NULL;
@@ -21,21 +22,6 @@ char *pass = NULL;
 char *fname = NULL;
 int rid = -1;
 int tid = -1;
-
-
-void parseArgs(int argc, char **argv);
-void makeConnection();
-int parseInput(char *buffer, char *command, char *second, char *third);
-void formatMessage(char *message, int code, char *second, char *third);
-void sendMessage(int code, int fd_as, int fd_fs, char *message);
-int readMessageAS(int fd, char *answer);
-int readMessageFS(int fd);
-int verifyAnswerAS(char *answer);
-int parseAnswerFS(char *operation, int code, int fd);
-int verifyAnswerFS(char *answer);
-int parseAnswerAS(char *answer, char *command, char *second);
-int uploadFile(int fd, char *message);
-off_t fileSize(char *filename);
 
 
 int main(int argc, char **argv) {
@@ -64,6 +50,7 @@ int main(int argc, char **argv) {
 }
 
 
+// Parse arguments from program execution
 void parseArgs(int argc, char **argv) {
     int i = 1, code;
 
@@ -97,6 +84,7 @@ void parseArgs(int argc, char **argv) {
 }
 
 
+// Handles all connections
 void makeConnection() {
     int fd_as, fd_fs = -1, code, out_fds;
     ssize_t n;
@@ -107,6 +95,7 @@ void makeConnection() {
     struct timeval tv_as_r, tv_fs_r;
     struct sigaction action;
 
+    // Handle signal
     memset(&action, 0, sizeof action);
     action.sa_handler = SIG_IGN;
     if (sigaction(SIGPIPE, &action, NULL) == ERROR) {
@@ -126,6 +115,7 @@ void makeConnection() {
         exit(1);
     }
 
+    // Set socket timeout
     n = setsockopt(fd_as, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv_as_r, sizeof tv_as_r);
     if (n == ERROR) {
         printf("Failed to set socket timeout\n");
@@ -177,7 +167,7 @@ void makeConnection() {
             memset(second, 0, 32);
             memset(third, 0, 32);
 
-            if (FD_ISSET(0, &testfds)) {
+            if (FD_ISSET(0, &testfds)) { // stdin
                 fgets(buffer, 128, stdin);
 
                 code = parseInput(buffer, command, second, third);
@@ -214,12 +204,12 @@ void makeConnection() {
                     sendMessage(code, fd_as, fd_fs, message); 
                 }
             }
-            else if (FD_ISSET(fd_as, &testfds)) {
+            else if (FD_ISSET(fd_as, &testfds)) { // AS
                 code = readMessageAS(fd_as, answer);
                 if (code == SOCKET_ERROR) break;
                 if (verifyAnswerAS(answer) != 0) parseAnswerAS(answer, command, second);
             }
-            else if (fd_fs != -1 && FD_ISSET(fd_fs, &testfds)) {
+            else if (fd_fs != -1 && FD_ISSET(fd_fs, &testfds)) { // FS
                 code = readMessageFS(fd_fs);
                 FD_CLR(fd_fs, &inputs);
                 close(fd_fs);
@@ -236,6 +226,8 @@ void makeConnection() {
     close(fd_as);
 }
 
+
+// Parse input and verify received parameters
 
 int parseInput(char *buffer, char *command, char *second, char *third) {
     int code;
@@ -290,6 +282,7 @@ int parseInput(char *buffer, char *command, char *second, char *third) {
 }
 
 
+// Format message to be sent
 void formatMessage(char *message, int code, char *second, char *third) {
     switch (code) {
         case LOGIN:
@@ -325,6 +318,7 @@ void formatMessage(char *message, int code, char *second, char *third) {
 }
 
 
+// Send message
 void sendMessage(int code, int fd_as, int fd_fs, char *message) {
     int fd = code < 5 ? fd_as : fd_fs;
     int nleft = strlen(message);
@@ -343,11 +337,13 @@ void sendMessage(int code, int fd_as, int fd_fs, char *message) {
 }
 
 
+// Read message from FS
 int readMessageFS(int fd) {
     char operation[9];
     char *ptr = operation;
     int nread, code;
 
+    // Read operation
     nread  = readTcp(fd, 3, ptr);
     if (nread <= 0) return nread;
     ptr += nread;
@@ -356,7 +352,7 @@ int readMessageFS(int fd) {
     code = verifyOperation(operation);
     if (code == RLS || code == RRT) parseAnswerFS(operation, code, fd);
     else {
-        nread  = readTcp(fd, 5, ptr);
+        nread  = readTcp(fd, 5, ptr); // read remaining message
         if (nread == ERROR) return nread;
         ptr += nread;
         *ptr = '\0';
@@ -367,6 +363,7 @@ int readMessageFS(int fd) {
 }
 
 
+// Read message from AS
 int readMessageAS(int fd, char *answer) {
     char *ptr = answer;
     int nread;
@@ -380,6 +377,7 @@ int readMessageAS(int fd, char *answer) {
 }
 
 
+// Process message received from AS
 int verifyAnswerAS(char *answer) {
     if (strcmp(answer, "RLO OK\n") == 0) {
         isLogged = 1;
@@ -401,6 +399,7 @@ int verifyAnswerAS(char *answer) {
 }
 
 
+// Parse message received from AS
 int parseAnswerAS(char *answer, char *command, char *second) {
     sscanf(answer, "%s %s", command, second);
 
@@ -415,6 +414,7 @@ int parseAnswerAS(char *answer, char *command, char *second) {
 }
 
 
+// Process message received from FS
 int verifyAnswerFS(char *answer) {
     if (strcmp(answer, "RUP OK\n") == 0) printf("Upload request approved: %s", answer);
     else if (strcmp(answer, "RUP NOK\n") == 0) printf("UID doesn't exist: %s", answer);
@@ -457,6 +457,7 @@ int verifyAnswerFS(char *answer) {
 }
 
 
+// Parse message received from FS
 int parseAnswerFS(char *operation, int code, int fd) {
     char status[4], buffer[128];
     char *ptr = status;
@@ -478,7 +479,7 @@ int parseAnswerFS(char *operation, int code, int fd) {
                 }
                 ptr = buffer;
                 while (i <= nFiles) {
-                    nread = readTcp(fd, 1, ptr);
+                    nread = readTcp(fd, 1, ptr); // read fname and fsize until space or \n is reached
                     if (nread <= 0) return nread;
                     if (*ptr == ' ' || *ptr == '\n') spacesRead++;
                     ptr++;
@@ -494,7 +495,7 @@ int parseAnswerFS(char *operation, int code, int fd) {
                 }
             }
             else {
-                nread  = readTcp(fd, 2, ptr);
+                nread  = readTcp(fd, 2, ptr); // read remaining message
                 if (nread <= 0) return nread;
                 ptr += nread;
                 *ptr = '\0';
@@ -506,13 +507,13 @@ int parseAnswerFS(char *operation, int code, int fd) {
 
         case RRT:
             if (strcmp(status, " OK") == 0) {
-                nread  = readTcp(fd, 1, ptr);
+                nread  = readTcp(fd, 1, ptr); // read space
                 if (nread <= 0) return nread;
                 
                 ptr = buffer;
                 memset(buffer, 0, 128);
                 while (1) {
-                    nread  = readTcp(fd, 1, ptr);
+                    nread  = readTcp(fd, 1, ptr); // read fsize
                     if (nread <= 0) return nread;
                     ptr += nread;
 
@@ -529,7 +530,7 @@ int parseAnswerFS(char *operation, int code, int fd) {
                         return ERROR;
                     }
                     while (fSize > 0) {
-                        if (fSize < 127) nread  = readTcp(fd, fSize, ptr);
+                        if (fSize < 127) nread  = readTcp(fd, fSize, ptr); // read file content
                         else nread  = readTcp(fd, 127, ptr);
                         if (nread < 0) {
                             fclose(fptr);
@@ -548,7 +549,7 @@ int parseAnswerFS(char *operation, int code, int fd) {
                 }
             }
             else {
-                nread  = readTcp(fd, 2, ptr);
+                nread  = readTcp(fd, 2, ptr); // read remaining message
                 if (nread <= 0) return nread;
                 ptr += nread;
                 *ptr = '\0';
@@ -567,6 +568,7 @@ int parseAnswerFS(char *operation, int code, int fd) {
 }
 
 
+// Upload file to FS
 int uploadFile(int fd, char *message) {
     FILE *fptr;
     off_t fsize;
@@ -617,6 +619,7 @@ int uploadFile(int fd, char *message) {
 }
 
 
+// Determine file size
 off_t fileSize(char *filename) {
     struct stat st;
 

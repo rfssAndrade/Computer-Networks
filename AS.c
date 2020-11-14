@@ -296,7 +296,6 @@ void parseMessage(char *buffer, userinfo user, int fd_udp, struct sockaddr_in ad
             else writeTcp(user->fd, len, message);;
             break;
     }
-    printf("SENT: %s", message); //debug
 }
 
 

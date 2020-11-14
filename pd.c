@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <signal.h>
 #include "verify.h"
+#include "pd.h"
 
 
 char *PDIP = NULL;
@@ -15,17 +16,6 @@ char *ASport = NULL;
 int isRegistered = 0;
 char *uid = NULL;
 char *pass = NULL;
-
-
-void parseArgs(int argc, char **argv);
-int parseInput(char *buffer, char *command, char *uid, char *pass);
-void makeConnection();
-int verifyAnswer(char *answer);
-void formatMessage(char *message, int code, char *second, char *third);
-void sendMessageClient(int fd, char *message, struct addrinfo *res);
-void readMessage(int fd, char *answer, struct sockaddr_in *addr);
-void sendMessageServer(int fd, char *message, struct sockaddr_in addr);
-void parseMessage(char *answer, char *message, char *command, char *second);
 
 
 int main(int argc, char **argv) {
@@ -50,6 +40,7 @@ int main(int argc, char **argv) {
 }
 
 
+// Parse arguments from program execution
 void parseArgs(int argc, char **argv) {
     int i = 2, code;
     PDIP = argv[1];
@@ -84,6 +75,7 @@ void parseArgs(int argc, char **argv) {
 }
 
 
+// Handles all connections
 void makeConnection() {
     int fd_client, fd_server, code = 0, out_fds;
     ssize_t n;
@@ -93,6 +85,7 @@ void makeConnection() {
     fd_set inputs, testfds;
     struct sigaction action;
 
+    // Handle signal
     memset(&action, 0, sizeof action);
     action.sa_handler = SIG_IGN;
     if (sigaction(SIGPIPE, &action, NULL) == ERROR) {
@@ -158,7 +151,7 @@ void makeConnection() {
                 memset(second, 0, 16);
                 memset(third, 0, 16);
 
-                if (FD_ISSET(0, &testfds)) {
+                if (FD_ISSET(0, &testfds)) { // stdin
                     fgets(buffer, 128, stdin);
                     code = parseInput(buffer, command, second, third);
 
@@ -167,11 +160,11 @@ void makeConnection() {
                     formatMessage(message, code, second, third);
                     sendMessageClient(fd_client, message, res_as);
                 }
-                else if (FD_ISSET(fd_client, &testfds)) {
+                else if (FD_ISSET(fd_client, &testfds)) { // PD client of AS
                     readMessage(fd_client, answer, &addr_client);
                     verifyAnswer(answer);
                 }
-                else if (FD_ISSET(fd_server, &testfds)) {
+                else if (FD_ISSET(fd_server, &testfds)) { // AS client of PD
                     readMessage(fd_server, answer, &addr_server);
                     parseMessage(answer, message, command, second);
                     sendMessageServer(fd_server, message, addr_server);
@@ -188,6 +181,7 @@ void makeConnection() {
 }
 
 
+// Parse input and verify received parameters
 int parseInput(char *buffer, char *command, char *second, char *third) {
     int code;
 
@@ -221,6 +215,7 @@ int parseInput(char *buffer, char *command, char *second, char *third) {
 }
 
 
+// Format message to be sent
 void formatMessage(char *message, int code, char *second, char *third) {
     switch (code) {
         case REG:
@@ -233,6 +228,7 @@ void formatMessage(char *message, int code, char *second, char *third) {
 }
 
 
+// Send message PD client of AS
 void sendMessageClient(int fd, char *message, struct addrinfo *res) {
     int code;
 
@@ -241,6 +237,7 @@ void sendMessageClient(int fd, char *message, struct addrinfo *res) {
 }
 
 
+// Read message
 void readMessage(int fd, char *answer, struct sockaddr_in *addr) {
     int code;
     socklen_t addrlen = sizeof(addr);
@@ -250,6 +247,7 @@ void readMessage(int fd, char *answer, struct sockaddr_in *addr) {
 }
 
 
+// Send message AS client of PD
 void sendMessageServer(int fd, char *message, struct sockaddr_in addr) {
     int code;
     socklen_t addrlen = sizeof(addr);
@@ -259,6 +257,7 @@ void sendMessageServer(int fd, char *message, struct sockaddr_in addr) {
 }
 
 
+// Process message received from AS
 int verifyAnswer(char *answer) {
     if (strcmp(answer, "RRG OK\n") == 0) {
         isRegistered = 1;
@@ -278,6 +277,7 @@ int verifyAnswer(char *answer) {
 }
 
 
+// Parse message received from AS
 void parseMessage(char *answer, char *message, char *command, char *second) {
     sscanf(answer, "%s %s", command, second);
         if (verifyOperation(command) == VLC && strcmp(uid, second) == 0) {
