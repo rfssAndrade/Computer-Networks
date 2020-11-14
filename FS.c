@@ -344,14 +344,15 @@ userinfo parseMessageAS(char *buffer, char *message, userinfo *fds, int size) {
         case UPLOAD:
             len = sprintf(message, "RUP OK\n");
             writeTcp(user->fd, len, message);
+            printf("SENT: %s", message); // debug
             break;
         case INV:
             if (user->lastOp == UPLOAD) removeFile(user, uid);
             len = sprintf(message, "%s INV\n", operation);
             writeTcp(user->fd, len, message);
+            printf("SENT: %s", message); // debug
             break;
     }
-    printf("SENT: %s", message); // debug
     return user;
 }
 
@@ -394,6 +395,7 @@ void list(userinfo user, char *uid) {
     else len = sprintf(message, "RLS %d%s\n", nfiles, files);
 
     writeTcp(user->fd, len, message);
+    printf("SENT: %s", message); // debug
 }
 
 
@@ -447,6 +449,7 @@ void removeUser(userinfo user, char *uid) {
 
     len = sprintf(message, "RRM OK\n");
     writeTcp(user->fd, len, message);
+    printf("SENT: %s", message); // debug
 }
 
 
@@ -493,6 +496,7 @@ void delete(userinfo user, char *uid, char *fname) {
     else len = sprintf(message, "RDL EOF\n");
 
     writeTcp(user->fd, len , message);
+    printf("SENT: %s", message); // debug
 }
 
 
@@ -561,6 +565,7 @@ void retrieve(userinfo user, char *uid, char *fname) {
         fsize -= nwritten;
     }
     writeTcp(user->fd, 1, "\n");
+    printf("SENT: %s", message); // debug
     fclose(fptr);
 }
 
