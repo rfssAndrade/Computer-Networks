@@ -610,7 +610,7 @@ int validateUser(char *uid, char *rid, char *vc) {
     fptr = fopen(path, "w");
     if (fptr == NULL) return 0;
 
-    tid = rand() * 1000 % 10000;
+    tid = rand() * 10000;
     while (tid < 1000) tid *= 10;
     len = sprintf(temp, "%d %s %s", tid, fop, fname);
     fwrite(temp, sizeof(char), len, fptr);
