@@ -73,7 +73,7 @@ void makeConnection() {
     DIR *d;
     struct timeval tv_tcp_r, tv_udp_r, t2;
     int elapsedTime = 0;
-    char message[32];
+    char message[128];
 
     fds = calloc(size, sizeof(struct userinfo));
 
@@ -141,8 +141,8 @@ void makeConnection() {
                 exit(1);
             
             default:    
-                memset(buffer, 0, sizeof(buffer));
-                memset(message, 0, sizeof(message));
+                memset(buffer, 0, 128);
+                memset(message, 0, 128);
 
                 if (FD_ISSET(fd_udp, &testfds)) {
                     n = readMessageUdp(fd_udp, buffer, &addr);
@@ -333,7 +333,7 @@ int registerUser(char *uid, char *pass, char *PDIP, char *PDport) {
         }
     }
     else {
-        memset(buffer, 0, sizeof(char));
+        memset(buffer, 0, 128);
         fread(buffer, sizeof(char), 16, fptr);
         if (strcmp(buffer, pass) != 0) {
             fclose(fptr);
@@ -426,7 +426,7 @@ int unregisterUser(char *uid, char *pass) {
     fptr = fopen(path, "r");
     if (fptr == NULL) return NOK;
 
-    memset(buffer, 0, sizeof(char));
+    memset(buffer, 0, 16);
     fread(buffer, sizeof(char), 16, fptr);
     if (strcmp(buffer, pass) != 0) {
         fclose(fptr);
@@ -481,7 +481,7 @@ int loginUser(char *uid, char *pass, userinfo user) {
     fptr = fopen(path, "r");
     if (fptr == NULL) return NOK;
 
-    memset(buffer, 0, sizeof(buffer));
+    memset(buffer, 0, 16);
     fread(buffer, sizeof(char), 16, fptr);
     if (strcmp(buffer, pass) != 0) {
         fclose(fptr);
@@ -549,7 +549,7 @@ int approveRequest(char *uid, char *rid, char *fop, char *fname, int *vc, struct
     fptr = fopen(path, "r");
     if (fptr == NULL) return EPD;
 
-    memset(buffer, 0, sizeof(buffer));
+    memset(buffer, 0, 128);
     fread(buffer, sizeof(char), 127, fptr);
     sscanf(buffer, "%s %s", PDIP, PDport);
     fclose(fptr);
@@ -564,7 +564,7 @@ int approveRequest(char *uid, char *rid, char *fop, char *fname, int *vc, struct
     fptr = fopen(path, "w");
     if (fptr == NULL) return ERR;
 
-    memset(buffer, 0, sizeof(buffer));
+    memset(buffer, 0, 128);
     *vc = rand() % 10000;
     len = sprintf(buffer, "%s %04d %s %s", rid, *vc, fop, fname);
     nwritten = fwrite(buffer, sizeof(char), len, fptr);
@@ -595,7 +595,7 @@ int validateUser(char *uid, char *rid, char *vc) {
     fptr = fopen(path, "r");
     if (fptr == NULL) return 0;
 
-    memset(buffer, 0, sizeof(buffer));
+    memset(buffer, 0, 128);
     fread(buffer, sizeof(char), 127, fptr);
     sscanf(buffer, "%s %s %s %s", localRid, localVc, fop, fname);
 
@@ -632,7 +632,7 @@ int validateOperation(char *uid, char *tid, char *message) {
         return len;
     }
 
-    memset(buffer, 0, sizeof(buffer));
+    memset(buffer, 0, 128);
     fread(buffer, sizeof(char), 127, fptr);
     nread = sscanf(buffer, "%s %s %s", localTid, fop, fname);
     fclose(fptr);

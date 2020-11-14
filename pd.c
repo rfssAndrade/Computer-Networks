@@ -89,7 +89,7 @@ void makeConnection() {
     ssize_t n;
     struct addrinfo hints_as, hints_pd, *res_as, *res_pd;
     struct sockaddr_in addr_client, addr_server;
-    char buffer[128], command[8], second[8], third[16], answer[128], message[128];
+    char buffer[128], command[16], second[16], third[16], answer[128], message[128];
     fd_set inputs, testfds;
     struct sigaction action;
 
@@ -151,12 +151,12 @@ void makeConnection() {
                 perror("select");
                 exit(1);
             default:
-                memset(answer, 0, sizeof(answer));
-                memset(message, 0, sizeof(message));
-                memset(buffer, 0, sizeof(buffer));
-                memset(command, 0, sizeof(command));
-                memset(second, 0, sizeof(second));
-                memset(third, 0, sizeof(third));
+                memset(answer, 0, 128);
+                memset(message, 0, 128);
+                memset(buffer, 0, 128);
+                memset(command, 0, 16);
+                memset(second, 0, 16);
+                memset(third, 0, 16);
 
                 if (FD_ISSET(0, &testfds)) {
                     fgets(buffer, 128, stdin);
@@ -266,8 +266,8 @@ int verifyAnswer(char *answer) {
         return 1;
     }
     else if (strcmp(answer, "RRG NOK\n") == 0) {
-        memset(uid, 0, sizeof(uid));
-        memset(pass, 0, sizeof(pass));
+        memset(uid, 0, 6);
+        memset(pass, 0, 9);
         printf("Registration failed: %s", answer);
     }
     else if (strcmp(answer, "RUN OK\n") == 0) printf("Unresgitration successful: %s", answer);

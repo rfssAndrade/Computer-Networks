@@ -170,12 +170,12 @@ void makeConnection() {
                 perror("select");
                 exit(1);
         default:
-            memset(answer, 0, sizeof(answer));
-            memset(message, 0, sizeof(message));
-            memset(buffer, 0, sizeof(buffer));
-            memset(command, 0, sizeof(command));
-            memset(second, 0, sizeof(second));
-            memset(third, 0, sizeof(third));
+            memset(answer, 0, 128);
+            memset(message, 0, 128);
+            memset(buffer, 0, 128);
+            memset(command, 0, 16);
+            memset(second, 0, 32);
+            memset(third, 0, 32);
 
             if (FD_ISSET(0, &testfds)) {
                 fgets(buffer, 128, stdin);
@@ -224,7 +224,7 @@ void makeConnection() {
                 FD_CLR(fd_fs, &inputs);
                 close(fd_fs);
                 fd_fs = -1;
-                memset(fname, 0, sizeof(fname));
+                memset(fname, 0, 25);
             }
             break;
         }
@@ -488,7 +488,7 @@ int parseAnswerFS(char *operation, int code, int fd) {
                         printf("%d - %s\n", i, buffer);
                         i++;
                         spacesRead = 0;
-                        memset(buffer, 0, sizeof(buffer));
+                        memset(buffer, 0, 128);
                         ptr = buffer;
                     }
                 }
@@ -510,7 +510,7 @@ int parseAnswerFS(char *operation, int code, int fd) {
                 if (nread <= 0) return nread;
                 
                 ptr = buffer;
-                memset(buffer, 0, sizeof(buffer));
+                memset(buffer, 0, 128);
                 while (1) {
                     nread  = readTcp(fd, 1, ptr);
                     if (nread <= 0) return nread;
@@ -586,7 +586,7 @@ int uploadFile(int fd, char *message) {
         return ERROR;
     }
 
-    len = sprintf(message, "UPL %s %04d %s %lld ", uid, tid, fname, fsize);
+    len = sprintf(message, "UPL %s %04d %s %ld ", uid, tid, fname, fsize);
     nwritten = writeTcp(fd, len, ptr);
     if (nwritten < 0) {
         fclose(fptr);

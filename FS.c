@@ -153,8 +153,8 @@ void makeConnection() {
                 break;
 
             default:
-                memset(buffer, 0, sizeof(buffer));
-                memset(message, 0, sizeof(message));
+                memset(buffer, 0, 128);
+                memset(message, 0, 128);
 
                 if (FD_ISSET(fd_udp, &testfds)) {
                     addrlen = sizeof(addr);
@@ -362,7 +362,7 @@ void list(userinfo user, char *uid) {
     int nfiles = 0, len;
     off_t fsize;
 
-   memset(files, 0, sizeof(files));
+   memset(files, 0, 1024);
 
     dUsers = opendir("USERSF");
     if (dUsers == NULL) {
@@ -384,7 +384,7 @@ void list(userinfo user, char *uid) {
         if (verifyFname(dir->d_name) == 0) {
             nfiles++;
             fsize = fileSize(dir->d_name);
-            sprintf(temp, " %s %lld", dir->d_name, fsize);
+            sprintf(temp, " %s %ld", dir->d_name, fsize);
             strcat(files, temp);
         }
     }
@@ -549,7 +549,7 @@ void retrieve(userinfo user, char *uid, char *fname) {
 
     fsize = fileSize(path);
 
-    len = sprintf(message, "RRT OK %lld ", fsize);
+    len = sprintf(message, "RRT OK %ld ", fsize);
     writeTcp(user->fd, len, message);
 
     while (fsize > 0) {
@@ -660,7 +660,7 @@ int upload(char *buffer, char *message, userinfo user) {
     len = sprintf(message, "VLD %s %s\n", uid, tid);
     fclose(fptr);
     strcpy(user->uid, uid);
-    memset(user->lastUploadedFile, 0, sizeof(user->lastUploadedFile));
+    memset(user->lastUploadedFile, 0, 32);
     strcpy(user->lastUploadedFile, fname);
     user->lastOp = UPLOAD;
 
