@@ -385,9 +385,9 @@ void list(userinfo user, char *uid) {
     while ((dir = readdir(dUsers)) != NULL) {
         if (strlen(dir->d_name) > 3) { // evitar . e ..
             nfiles++;
-            // sprintf(path, "USERSF/%s/%s", uid, dir->d_name);
-            // fsize = fileSize(dir->d_name);
-            sprintf(temp, " %s %hu", dir->d_name, dir->d_reclen);
+            sprintf(path, "USERSF/%s/%s", uid, dir->d_name);
+            fsize = fileSize(path);
+            sprintf(temp, " %s %lu", dir->d_name, fsize);
             strcat(files, temp);
         }
     }
