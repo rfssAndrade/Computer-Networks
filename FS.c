@@ -222,7 +222,7 @@ void makeConnection() {
                                 port = ntohs(fds[i]->addr.sin_port);
                                 printf("RECEIVED FROM %s %u: %s\n", ip, port, buffer);
                             }
-                            
+
                             if (len > 9) {
                                 code = sendto(fd_udp, message, strlen(message), 0, res_udp->ai_addr, res_udp->ai_addrlen);
                                 if (code == ERROR) break;
@@ -252,7 +252,7 @@ void makeConnection() {
 
 
 int parseMessageUser(char *buffer, char *message, userinfo user) {
-    int code, len;
+    int code, len, error;
     char  operation[4], uid[8], tid[8], fname[32], path[64];
     DIR *dUsers;
     struct dirent *dir = NULL;
@@ -267,8 +267,8 @@ int parseMessageUser(char *buffer, char *message, userinfo user) {
     }
     sprintf(path, "USERSF/%s", uid);
     if (!searchDir(dUsers, dir, uid)) {
-        code = mkdir(path, 0777);
-        if (code == ERROR) {
+        error = mkdir(path, 0777);
+        if (error == ERROR) {
             closedir(dUsers);
             len = sprintf(message, "%s NOK\n", operation);
             return len;
